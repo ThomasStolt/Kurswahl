@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core'
+import { useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
 import type { Student } from '../types'
 
 function PriorityBadge({ prio }: { prio: number }) {
   if (prio === 0) return <span className="text-t3">–</span>
-  // prio 1 = best (green), prio 8 = worst (red)
   const hue = Math.round(120 - (prio - 1) * (115 / 7))
   return (
     <span
@@ -14,6 +16,75 @@ function PriorityBadge({ prio }: { prio: number }) {
     >
       {prio}
     </span>
+  )
+}
+
+function SortableCourseItem({
+  course, index, onMoveUp, onMoveDown, canUp, canDown,
+}: {
+  course: string; index: number;
+  onMoveUp: () => void; onMoveDown: () => void;
+  canUp: boolean; canDown: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: course })
+  const style = { transform: CSS.Transform.toString(transform), transition }
+  const selected = index < 8
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg select-none
+        transition-all duration-100
+        ${isDragging
+          ? 'opacity-40 scale-[0.98] bg-accent/5 border border-accent/25 shadow-glow'
+          : selected
+          ? 'bg-surface border border-border hover:border-accent/25'
+          : 'bg-elevated border border-border/50 opacity-55 hover:opacity-80'}`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-t3 hover:text-t2 transition-colors flex-shrink-0 p-0.5 -m-0.5"
+        tabIndex={-1}
+      >
+        <svg viewBox="0 0 14 14" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M2 4.5h10M2 7h10M2 9.5h10" />
+        </svg>
+      </button>
+
+      {/* Priority indicator */}
+      <div className="w-5 flex-shrink-0 flex justify-center">
+        {selected ? <PriorityBadge prio={index + 1} /> : <span className="text-xs text-t3 font-mono">–</span>}
+      </div>
+
+      {/* Course name */}
+      <span className="flex-1 text-sm text-t1 truncate">{course}</span>
+
+      {/* Arrow buttons */}
+      <div className="flex gap-0.5 flex-shrink-0">
+        <button
+          onClick={onMoveUp}
+          disabled={!canUp}
+          className="p-1 rounded hover:bg-elevated text-t3 hover:text-t1 disabled:opacity-20 transition-all"
+        >
+          <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 7l3-4 3 4" />
+          </svg>
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={!canDown}
+          className="p-1 rounded hover:bg-elevated text-t3 hover:text-t1 disabled:opacity-20 transition-all"
+        >
+          <svg viewBox="0 0 10 10" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 3l3 4 3-4" />
+          </svg>
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -33,7 +104,7 @@ export default function EditorPage() {
   const [editName, setEditName]     = useState<Record<number, string>>({})
   const [saving, setSaving]         = useState<number | null>(null)
   const [editingNr, setEditingNr]   = useState<number | null>(null)
-  const [editPrefs, setEditPrefs]   = useState<Record<string, number>>({})
+  const [editOrder, setEditOrder]   = useState<string[]>([])
 
   useEffect(() => {
     api.getStudents().then(setStudents).finally(() => setLoading(false))
@@ -52,18 +123,45 @@ export default function EditorPage() {
   }
 
   const startEditingPrefs = (student: Student) => {
-    if (editingNr === student.nr) {
-      setEditingNr(null)
-      return
-    }
+    if (editingNr === student.nr) { setEditingNr(null); return }
+    const selected = Object.entries(student.preferences)
+      .filter(([, p]) => p > 0)
+      .sort(([, a], [, b]) => a - b)
+      .map(([course]) => course)
+    const unselected = Object.entries(student.preferences)
+      .filter(([, p]) => p === 0)
+      .map(([course]) => course)
+      .sort((a, b) => a.localeCompare(b))
+    setEditOrder([...selected, ...unselected])
     setEditingNr(student.nr)
-    setEditPrefs({ ...student.preferences })
+  }
+
+  const moveItem = (index: number, direction: -1 | 1) => {
+    setEditOrder(prev => {
+      const target = index + direction
+      if (target < 0 || target >= prev.length) return prev
+      const next = [...prev]
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return next
+    })
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    setEditOrder(prev => {
+      const oldIdx = prev.indexOf(active.id as string)
+      const newIdx = prev.indexOf(over.id as string)
+      return arrayMove(prev, oldIdx, newIdx)
+    })
   }
 
   const savePrefs = async (student: Student) => {
     setSaving(student.nr)
+    const preferences: Record<string, number> = {}
+    editOrder.forEach((course, i) => { preferences[course] = i < 8 ? i + 1 : 0 })
     try {
-      const updated = await api.updateStudent(student.nr, { preferences: editPrefs })
+      const updated = await api.updateStudent(student.nr, { preferences })
       setStudents(prev => prev.map(s => s.nr === updated.nr ? updated : s))
       setEditingNr(null)
     } finally {
@@ -123,19 +221,13 @@ export default function EditorPage() {
             <tbody>
               {students.map((student, idx) => {
                 const isEditing = editingNr === student.nr
-                const nonZero   = Object.values(editPrefs).filter(v => v > 0)
-                const count     = nonZero.length
-                const hasDups   = count !== new Set(nonZero).size
-                const canSave   = count === 8 && !hasDups
-
                 return (
-                  <>
+                  <Fragment key={student.nr}>
                     <tr
-                      key={student.nr}
                       style={{ animationDelay: `${Math.min(idx * 20, 300)}ms` }}
                       className={`border-t border-border transition-colors duration-100
                         ${student.valid ? 'hover:bg-elevated' : 'bg-err/[0.025] hover:bg-err/[0.05]'}
-                        ${isEditing ? 'bg-elevated' : ''}`}
+                        ${isEditing ? '!bg-elevated' : ''}`}
                     >
                       <td className="px-4 py-2.5 font-mono text-t3 text-xs w-12">{student.nr}</td>
                       <td className="px-4 py-2.5 w-48">
@@ -199,16 +291,13 @@ export default function EditorPage() {
                               className="text-xs bg-accent/10 text-accent px-3 py-1 rounded-lg
                                 hover:bg-accent/20 transition-colors duration-150 font-semibold disabled:opacity-50"
                             >
-                              {saving === student.nr ? '…' : 'Speichern'}
+                              {saving === student.nr ? '…' : 'Name'}
                             </button>
                           )}
                           <button
                             onClick={() => startEditingPrefs(student)}
                             className={`text-xs px-3 py-1 rounded-lg transition-all duration-150 font-semibold flex items-center gap-1
-                              ${isEditing
-                                ? 'bg-accent/15 text-accent'
-                                : 'text-t3 hover:text-t1 hover:bg-elevated'}`}
-                            title="Kurswahlen bearbeiten"
+                              ${isEditing ? 'bg-accent/15 text-accent' : 'text-t3 hover:text-t1 hover:bg-elevated'}`}
                           >
                             <svg viewBox="0 0 12 12" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" />
@@ -220,63 +309,61 @@ export default function EditorPage() {
                     </tr>
 
                     {isEditing && (
-                      <tr key={`prefs-${student.nr}`} className="border-t border-border">
-                        <td colSpan={5} className="px-4 py-4 bg-elevated">
-                          <div className="mb-3 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-t2 uppercase tracking-wider">Kurswahlen bearbeiten</span>
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
-                              ${canSave ? 'bg-ok/10 text-ok' : hasDups ? 'bg-err/10 text-err' : 'bg-accent/10 text-accent'}`}>
-                              {hasDups ? 'Doppelte Prioritäten!' : `${count} / 8 gewählt`}
+                      <tr className="border-t border-accent/20">
+                        <td colSpan={5} className="px-6 py-4 bg-elevated">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-t2 uppercase tracking-wider">
+                              Kurswahlen bearbeiten
+                            </span>
+                            <span className="text-xs text-t3">
+                              Reihenfolge = Priorität · die ersten 8 werden gewählt
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-                            {Object.entries(editPrefs)
-                              .sort(([a, pa], [b, pb]) => {
-                                if (pa === 0 && pb === 0) return a.localeCompare(b)
-                                if (pa === 0) return 1
-                                if (pb === 0) return -1
-                                return pa - pb
-                              })
-                              .map(([course, prio]) => {
-                                const isDup = prio > 0 && Object.entries(editPrefs).some(([c, p]) => c !== course && p === prio)
-                                return (
-                                  <label key={course} className="flex items-center gap-2 group">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      max={8}
-                                      value={prio === 0 ? '' : prio}
-                                      placeholder="–"
-                                      onChange={e => {
-                                        const val = e.target.value === '' ? 0 : Math.max(0, Math.min(8, parseInt(e.target.value) || 0))
-                                        setEditPrefs(prev => ({ ...prev, [course]: val }))
-                                      }}
-                                      className={`w-10 text-center text-sm border rounded-lg px-1 py-1 bg-surface text-t1
-                                        focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all duration-150
-                                        [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none
-                                        ${isDup ? 'border-err/50 bg-err/5' : 'border-border focus:border-accent/50'}`}
+                          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={editOrder} strategy={verticalListSortingStrategy}>
+                              <div className="space-y-1">
+                                {editOrder.map((course, i) => (
+                                  <Fragment key={course}>
+                                    {i === 8 && (
+                                      <div className="flex items-center gap-3 py-2 px-1">
+                                        <div className="h-px flex-1 bg-border" />
+                                        <span className="text-[11px] text-t3 font-medium tracking-wide">nicht gewählt</span>
+                                        <div className="h-px flex-1 bg-border" />
+                                      </div>
+                                    )}
+                                    <SortableCourseItem
+                                      course={course}
+                                      index={i}
+                                      onMoveUp={() => moveItem(i, -1)}
+                                      onMoveDown={() => moveItem(i, 1)}
+                                      canUp={i > 0}
+                                      canDown={i < editOrder.length - 1}
                                     />
-                                    <span className="text-xs text-t2 truncate group-hover:text-t1 transition-colors">{course}</span>
-                                  </label>
-                                )
-                              })}
-                          </div>
+                                  </Fragment>
+                                ))}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
                             <button
                               onClick={() => savePrefs(student)}
-                              disabled={!canSave || saving === student.nr}
-                              className="flex items-center gap-1.5 text-xs bg-accent text-surface px-4 py-1.5 rounded-lg font-semibold
-                                hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                              disabled={saving === student.nr}
+                              className="flex items-center gap-1.5 text-xs bg-accent text-surface px-4 py-1.5 rounded-lg
+                                font-semibold hover:bg-accent/90 disabled:opacity-40 transition-all duration-150"
                             >
                               {saving === student.nr ? (
-                                <><div className="w-3 h-3 rounded-full border border-current/30 border-t-current animate-spin-slow" /> Speichern…</>
+                                <>
+                                  <div className="w-3 h-3 rounded-full border border-current/30 border-t-current animate-spin-slow" />
+                                  Speichern…
+                                </>
                               ) : 'Speichern'}
                             </button>
                             <button
                               onClick={() => setEditingNr(null)}
-                              className="text-xs text-t3 hover:text-t1 px-3 py-1.5 rounded-lg hover:bg-border/50 transition-all duration-150"
+                              className="text-xs text-t3 hover:text-t1 px-3 py-1.5 rounded-lg
+                                hover:bg-border/40 transition-all duration-150"
                             >
                               Abbrechen
                             </button>
@@ -284,7 +371,7 @@ export default function EditorPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 )
               })}
             </tbody>
