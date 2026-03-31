@@ -1,0 +1,33 @@
+{
+  "name": "Kurswahl",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8000, 5173, 80],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI Backend", "onAutoForward": "notify" },
+    "5173": { "label": "Vite Dev Server", "onAutoForward": "openBrowser" },
+    "80":   { "label": "Docker Compose (Production)", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "sudo mkdir -p /data && sudo chmod 777 /data && pip install -r backend/requirements.txt && cd frontend && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true,
+        "[python]": { "editor.defaultFormatter": "ms-python.python" },
+        "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }
+      }
+    }
+  }
+}
