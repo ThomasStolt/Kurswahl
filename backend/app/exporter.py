@@ -38,4 +38,5 @@ def to_excel(assignments: list[Assignment]) -> bytes:
         ])
     buf = io.BytesIO()
     wb.save(buf)
+    buf.seek(0)
     return buf.getvalue()

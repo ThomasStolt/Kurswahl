@@ -26,8 +26,13 @@ def optimize_full():
 @router.post("/optimize/assignments")
 def optimize_assignments_only():
     data = session.load()
-    if not any(c.offered for c in data.courses):
+    offered = [c for c in data.courses if c.offered]
+    if not offered:
         raise HTTPException(status_code=400, detail="Keine Kurse als 'angeboten' markiert")
+    has_hj1 = any(c.semester == 1 for c in offered)
+    has_hj2 = any(c.semester == 2 for c in offered)
+    if not has_hj1 or not has_hj2:
+        raise HTTPException(status_code=400, detail="Angebotene Kurse müssen beiden Halbjahren zugeordnet sein")
     try:
         assignments = run_assignment_optimization(data.students, data.courses)
     except ValueError as exc:
