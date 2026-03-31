@@ -85,7 +85,8 @@ export default function OptimizePage() {
     const target = courses.find(c => c.name === targetName)
     if (!dragged || !target) return
 
-    // Swap semester assignments
+    // Swap semester assignments (optimistic update)
+    const previousCourses = courses
     const newCourses = courses.map(c => {
       if (c.name === draggedName) return { ...c, semester: target.semester, offered: target.offered }
       if (c.name === targetName) return { ...c, semester: dragged.semester, offered: dragged.offered }
@@ -94,13 +95,14 @@ export default function OptimizePage() {
     setCourses(newCourses as CourseStats[])
 
     // Persist changes to backend
-    await api.updateCourse(draggedName, { offered: target.offered ?? false, semester: target.semester ?? undefined })
-    await api.updateCourse(targetName, { offered: dragged.offered, semester: dragged.semester ?? undefined })
-
-    // Re-run assignment optimization
     setReassigning(true)
     try {
+      await api.updateCourse(draggedName, { offered: target.offered ?? false, semester: target.semester ?? undefined })
+      await api.updateCourse(targetName, { offered: dragged.offered, semester: dragged.semester ?? undefined })
       await api.runAssignmentOptimization()
+    } catch {
+      // Roll back optimistic update on failure
+      setCourses(previousCourses)
     } finally {
       setReassigning(false)
     }
