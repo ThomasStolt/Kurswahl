@@ -9,11 +9,18 @@ COURSE_CAPS: dict[str, int] = {"Kochen": 16}
 
 @router.post("/upload")
 async def upload_csv(file: UploadFile = File(...)):
-    if not file.filename.endswith(".csv"):
+    if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Nur CSV-Dateien erlaubt")
 
+    MAX_BYTES = 5 * 1024 * 1024  # 5 MB
     content = await file.read()
-    students, course_names = parser.parse_csv(content)
+    if len(content) > MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Datei zu groß (max 5 MB)")
+
+    try:
+        students, course_names = parser.parse_csv(content)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"CSV konnte nicht verarbeitet werden: {exc}")
 
     courses = [
         Course(

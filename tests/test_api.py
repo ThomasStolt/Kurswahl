@@ -1,5 +1,5 @@
 import io
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from app.models import SessionData
 from tests.conftest import VALID_CSV, INVALID_CSV_DUPLICATE
 
