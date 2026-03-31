@@ -38,7 +38,7 @@ export interface UploadResult {
 export interface ResultsData {
   by_course: {
     name: string
-    semester: number
+    semester: number | null
     students: { nr: number; name: string; score: number; semester: number }[]
     avg_score: number
     count: number
