@@ -1,5 +1,5 @@
 from pulp import (
-    LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, value, PULP_CBC_CMD
+    LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus, value, PULP_CBC_CMD
 )
 from app.models import Student, Course, Assignment
 
@@ -24,6 +24,7 @@ def run_full_optimization(
     valid = [s for s in students if s.valid]
     course_names = [c.name for c in courses]
     max_cap = {c.name: c.max_students for c in courses}
+    min_cap = {c.name: c.min_students for c in courses}
     score = _build_score(valid, course_names)
 
     prob = LpProblem("Kurswahl_Full", LpMaximize)
@@ -52,9 +53,9 @@ def run_full_optimization(
         n1 = lpSum(a1[(s, c)] for s in S)
         n2 = lpSum(a2[(s, c)] for s in S)
         prob += n1 <= max_cap[c] * in_hj1[c]
-        prob += n1 >= 15 * in_hj1[c]
+        prob += n1 >= min_cap[c] * in_hj1[c]
         prob += n2 <= max_cap[c] * in_hj2[c]
-        prob += n2 >= 15 * in_hj2[c]
+        prob += n2 >= min_cap[c] * in_hj2[c]
 
     # Schüler-Constraints
     for s in S:
@@ -64,7 +65,9 @@ def run_full_optimization(
             prob += a1[(s, c)] <= in_hj1[c]
             prob += a2[(s, c)] <= in_hj2[c]
 
-    prob.solve(PULP_CBC_CMD(msg=0))
+    status = prob.solve(PULP_CBC_CMD(msg=0))
+    if LpStatus[status] != "Optimal":
+        raise ValueError(f"Optimierung fehlgeschlagen: {LpStatus[status]} — zu wenige Schüler oder ungültige Kapazitäten")
 
     # Ergebnisse auslesen
     updated_courses = []
@@ -91,6 +94,7 @@ def run_assignment_optimization(
     hj1 = [c.name for c in courses if c.offered and c.semester == 1]
     hj2 = [c.name for c in courses if c.offered and c.semester == 2]
     max_cap = {c.name: c.max_students for c in courses}
+    min_cap = {c.name: c.min_students for c in courses}
     score = _build_score(valid, hj1 + hj2)
 
     prob = LpProblem("Kurswahl_Assign", LpMaximize)
@@ -105,16 +109,18 @@ def run_assignment_optimization(
     for c in hj1:
         n = lpSum(a1[(s, c)] for s in S)
         prob += n <= max_cap[c]
-        prob += n >= 15
+        prob += n >= min_cap[c]
     for c in hj2:
         n = lpSum(a2[(s, c)] for s in S)
         prob += n <= max_cap[c]
-        prob += n >= 15
+        prob += n >= min_cap[c]
     for s in S:
         prob += lpSum(a1[(s, c)] for c in hj1) == 1
         prob += lpSum(a2[(s, c)] for c in hj2) == 1
 
-    prob.solve(PULP_CBC_CMD(msg=0))
+    status = prob.solve(PULP_CBC_CMD(msg=0))
+    if LpStatus[status] != "Optimal":
+        raise ValueError(f"Zuteilung fehlgeschlagen: {LpStatus[status]} — Kurskapazitäten überprüfen")
 
     # Dummy-Variablen-Mapping für _build_assignments
     a1_all = {(s, c): a1[(s, c)] for s in S for c in hj1}
