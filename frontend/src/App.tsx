@@ -97,6 +97,9 @@ function NavBar({ dark, toggleDark }: { dark: boolean; toggleDark: () => void })
           <span className="font-display font-semibold text-t1 text-sm group-hover:text-accent transition-colors duration-150 hidden sm:block">
             Kurswahl
           </span>
+          <span className="text-[10px] font-mono text-t3 bg-elevated border border-border px-1.5 py-0.5 rounded-md hidden sm:block">
+            v{__APP_VERSION__}
+          </span>
         </NavLink>
 
         <StepNav />
