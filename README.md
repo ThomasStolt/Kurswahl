@@ -7,9 +7,11 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 - CSV-Upload mit automatischer Fehlervalidierung und Vorschau
 - ILP-Optimierung (PuLP/CBC) für maximale Schülerzufriedenheit
 - Kursauswahl per Drag & Drop zwischen Halbjahren und „Nicht angeboten"
+- Kurspräferenzen pro Schüler editierbar: sortierbare Liste per Drag & Drop oder Pfeil-Buttons
 - Optimistische UI-Aktualisierungen mit automatischem Rollback bei Fehler
 - Ergebnisansicht nach Kurs und nach Schüler (mit Zufriedenheitsbewertung)
 - Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx)
+- Dark Mode (system-aware, persistiert) mit warm Amber-Akzent
 
 ## Rahmenbedingungen
 
@@ -34,7 +36,7 @@ Nr.;Name;Kurs1;Kurs2;...;Kurs8
 ## Workflow
 
 1. **Upload** — CSV-Datei hochladen, Validierungsergebnisse prüfen
-2. **Editor** — Schülerdaten und Prioritäten bei Bedarf anpassen
+2. **Editor** — Namen anpassen; Kurspräferenzen per Drag & Drop neu sortieren
 3. **Optimierung** — ILP-Algorithmus starten, Ergebnis per Drag & Drop nachkorrigieren
 4. **Ergebnisse** — Zuteilungen einsehen und als CSV/Excel exportieren
 

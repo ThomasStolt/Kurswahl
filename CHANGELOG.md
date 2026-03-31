@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-01
+
+### Added
+
+- **Dark mode** — system preference respected on first visit, persisted in `localStorage`; toggled via sun/moon button in the navbar; no flash on load (inline script sets `.dark` before CSS)
+- **Version badge** — current `package.json` version injected at build time via Vite `define` and displayed as a monospace badge next to the logo
+- **Editable course preferences** — each student row in the Editor now has a "Wahlen" toggle that expands an inline sortable list of all courses; drag handles and up/down arrow buttons let the teacher reorder courses freely; position 1–8 maps directly to priority 1–8, everything below a "nicht gewählt" divider gets priority 0; no manual number entry or duplicate validation required
+
+### Changed
+
+- Complete UI redesign: CSS custom-property color tokens (`--c-*`) with Tailwind mapping, enabling single-source dark/light switching; typography switched to **Bricolage Grotesque** (headings) + **DM Sans** (body)
+- Navbar replaced with a sticky glass header (backdrop-blur) containing a step-progress indicator (done / active / upcoming states with amber glow on active step)
+- All pages use staggered entrance animations (`fade-up` with `animation-delay`)
+- Buttons, cards, and inputs polished with micro-interactions: hover lift, amber glow shadow, `active:scale` press feedback
+- Loading spinners unified across all pages
+- Upload zone: animated drag-highlight, success/error states with icons, format hint card
+- Results tab switcher changed from underline tabs to a segmented pill control
+
 ## [1.0.0] - 2026-03-31
 
 ### Added
@@ -43,4 +61,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session I/O mocked to support read-only filesystem environments
 - `pytest.ini` with `pythonpath = backend .` for correct import resolution
 
+[1.1.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ThomasStolt/Kurswahl/releases/tag/v1.0.0
