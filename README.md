@@ -4,10 +4,12 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 
 ## Features
 
-- CSV-Upload mit automatischer Fehlervalidierung
+- CSV-Upload mit automatischer Fehlervalidierung und Vorschau
 - ILP-Optimierung (PuLP/CBC) für maximale Schülerzufriedenheit
-- Manuelle Nachkorrektur per Drag & Drop
-- Export als CSV und Excel
+- Kursauswahl per Drag & Drop zwischen Halbjahren und „Nicht angeboten"
+- Optimistische UI-Aktualisierungen mit automatischem Rollback bei Fehler
+- Ergebnisansicht nach Kurs und nach Schüler (mit Zufriedenheitsbewertung)
+- Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx)
 
 ## Rahmenbedingungen
 
@@ -15,13 +17,66 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 - Kapazität: 15–22 Schüler pro Kurs (Kochen max. 16)
 - Schüler priorisieren 8 Wunschkurse (Priorität 1–8)
 
+## CSV-Format
+
+Die Eingabedatei muss folgendes Format haben (Semikolon als Trennzeichen):
+
+```
+Nr.;Name;Kurs1;Kurs2;...;Kurs8
+1;Max Mustermann;Biologie;Chemie;...;Physik
+```
+
+- Spalte `Nr.`: Ganzzahlige Schülernummer
+- Spalte `Name`: Vollständiger Name
+- Kursspalten: Priorisierte Wunschkurse (1 = höchste Priorität)
+- Genau 8 Nicht-Null-Einträge pro Schüler, keine Duplikate
+
+## Workflow
+
+1. **Upload** — CSV-Datei hochladen, Validierungsergebnisse prüfen
+2. **Editor** — Schülerdaten und Prioritäten bei Bedarf anpassen
+3. **Optimierung** — ILP-Algorithmus starten, Ergebnis per Drag & Drop nachkorrigieren
+4. **Ergebnisse** — Zuteilungen einsehen und als CSV/Excel exportieren
+
 ## Tech Stack
 
 | Schicht | Technologie |
 |---------|-------------|
-| Backend | Python 3.12, FastAPI, PuLP (ILP), openpyxl |
+| Backend | Python 3.12, FastAPI, PuLP (ILP/CBC), openpyxl |
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS, @dnd-kit |
 | Infra | Docker Compose, nginx |
+
+## Projektstruktur
+
+```
+Kurswahl/
+├── backend/
+│   ├── app/
+│   │   ├── main.py          # FastAPI-App, alle Router eingebunden
+│   │   ├── models.py        # Pydantic-Modelle (Student, Course, Assignment …)
+│   │   ├── session.py       # Atomares JSON-Session-Management
+│   │   ├── parser.py        # CSV-Parser mit Validierung
+│   │   ├── optimizer.py     # ILP-Optimierung mit PuLP/CBC
+│   │   ├── exporter.py      # CSV- und Excel-Export
+│   │   └── routers/         # FastAPI-Router (upload, students, courses, optimize, results, export)
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── api.ts           # Typsicherer API-Client
+│   │   ├── types.ts         # TypeScript-Interfaces
+│   │   ├── App.tsx          # Router + Navigation
+│   │   └── pages/           # UploadPage, EditorPage, OptimizePage, ResultsPage
+│   ├── package.json
+│   └── vite.config.ts
+├── tests/
+│   ├── conftest.py
+│   ├── test_parser.py
+│   ├── test_optimizer.py
+│   └── test_api.py
+├── docker-compose.yml
+└── nginx.conf
+```
 
 ## Schnellstart (Docker)
 
@@ -44,12 +99,12 @@ cd frontend && npm install && npm run dev
 
 Frontend läuft auf `http://localhost:5173`, Backend auf `http://localhost:8000`.
 
-## GitHub Codespaces
-
-Einfach über **Code → Codespaces → Create codespace on main** starten. Alle Abhängigkeiten werden automatisch installiert.
-
 ## Tests
 
 ```bash
 cd backend && pytest ../tests/ -v
 ```
+
+## GitHub Codespaces
+
+Einfach über **Code → Codespaces → Create codespace on main** starten. Alle Abhängigkeiten werden automatisch installiert.
