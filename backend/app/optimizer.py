@@ -34,9 +34,8 @@ def run_full_optimization(
     in_hj2 = {c: LpVariable(f"hj2_{i}",   cat=LpBinary) for i, c in enumerate(course_names)}
     a1 = {(s, c): LpVariable(f"a1_{s}_{i}", cat=LpBinary)
           for s in S for i, c in enumerate(course_names)}
-    # Fixed: use enumerate to avoid undefined 'i' variable
-    a2 = {(s, c): LpVariable(f"a2_{s}_{c}", cat=LpBinary)
-          for s in S for c in course_names}
+    a2 = {(s, c): LpVariable(f"a2_{s}_{i}", cat=LpBinary)
+          for s in S for i, c in enumerate(course_names)}
 
     # Zielfunktion
     prob += lpSum(score[(s, c)] * (a1[(s, c)] + a2[(s, c)])
