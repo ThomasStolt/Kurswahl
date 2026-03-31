@@ -55,6 +55,10 @@ def parse_csv(content: bytes) -> tuple[list[Student], list[str]]:
             except ValueError:
                 raw_prefs[course] = -1  # Wird als ungültig erkannt
 
-        students.append(validate_student(nr=int(nr_raw), name="", raw_prefs=raw_prefs))
+        try:
+            nr = int(nr_raw)
+        except ValueError:
+            continue
+        students.append(validate_student(nr=nr, name="", raw_prefs=raw_prefs))
 
     return students, course_names
