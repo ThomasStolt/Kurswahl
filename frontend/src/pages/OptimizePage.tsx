@@ -7,49 +7,90 @@ import { api } from '../api'
 import type { CourseStats } from '../types'
 
 function CourseCard({ course }: { course: CourseStats }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: course.name })
   const style = { transform: CSS.Transform.toString(transform), transition }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm cursor-grab active:cursor-grabbing select-none"
+      className={`bg-surface border rounded-xl px-3.5 py-2.5 cursor-grab active:cursor-grabbing select-none
+        transition-all duration-150
+        ${isDragging
+          ? 'border-accent/40 opacity-40 scale-95 shadow-glow'
+          : 'border-border hover:border-accent/30 hover:shadow-card-md'}`}
     >
-      <span className="font-medium text-gray-800 text-sm">{course.name}</span>
-      <span className="ml-2 text-xs text-gray-400">{course.total_interested} SuS</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-t1 text-sm truncate">{course.name}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[11px] text-t3 bg-elevated px-2 py-0.5 rounded-full font-medium">
+            {course.total_interested}
+          </span>
+          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-t3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M2 5h12M2 8h12M2 11h12" />
+          </svg>
+        </div>
+      </div>
     </div>
   )
 }
 
-const COLUMN_STYLES = {
-  blue:   { wrap: 'bg-blue-50 border-blue-200',     heading: 'text-blue-700' },
-  purple: { wrap: 'bg-purple-50 border-purple-200', heading: 'text-purple-700' },
-  gray:   { wrap: 'bg-gray-100 border-gray-200',    heading: 'text-gray-600' },
-} as const
+const COLUMNS = [
+  {
+    title:  'Halbjahr 1',
+    border: 'border-blue-500/20 dark:border-blue-500/15',
+    header: 'bg-blue-500/[0.06]',
+    badge:  'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    dot:    'bg-blue-500',
+  },
+  {
+    title:  'Halbjahr 2',
+    border: 'border-violet-500/20 dark:border-violet-500/15',
+    header: 'bg-violet-500/[0.06]',
+    badge:  'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    dot:    'bg-violet-500',
+  },
+  {
+    title:  'Nicht angeboten',
+    border: 'border-border',
+    header: 'bg-elevated',
+    badge:  'bg-elevated text-t2',
+    dot:    'bg-t3',
+  },
+] as const
 
-function Column({
-  title, courses, color
-}: { title: string; courses: CourseStats[]; color: keyof typeof COLUMN_STYLES }) {
-  const { wrap, heading } = COLUMN_STYLES[color]
+function Column({ col, courses }: { col: typeof COLUMNS[number]; courses: CourseStats[] }) {
   return (
-    <div className={`${wrap} border rounded-xl p-4 min-h-48`}>
-      <h3 className={`font-semibold ${heading} mb-3`}>{title}</h3>
-      <SortableContext items={courses.map(c => c.name)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2">
-          {courses.map(c => <CourseCard key={c.name} course={c} />)}
+    <div className={`bg-surface border rounded-2xl overflow-hidden shadow-card ${col.border}`}>
+      <div className={`${col.header} px-4 pt-4 pb-3 border-b border-border`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+            <h3 className="font-display font-semibold text-t1 text-sm">{col.title}</h3>
+          </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${col.badge}`}>
+            {courses.length}
+          </span>
         </div>
-      </SortableContext>
+      </div>
+      <div className="p-3">
+        <SortableContext items={courses.map(c => c.name)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2 min-h-14">
+            {courses.map(c => <CourseCard key={c.name} course={c} />)}
+          </div>
+        </SortableContext>
+      </div>
     </div>
   )
 }
 
 export default function OptimizePage() {
   const navigate = useNavigate()
-  const [courses, setCourses] = useState<CourseStats[]>([])
-  const [loading, setLoading] = useState(true)
+  const [courses, setCourses]     = useState<CourseStats[]>([])
+  const [loading, setLoading]     = useState(true)
   const [optimizing, setOptimizing] = useState(false)
   const [reassigning, setReassigning] = useState(false)
   const [optimized, setOptimized] = useState(false)
@@ -58,8 +99,8 @@ export default function OptimizePage() {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
   }, [])
 
-  const hj1 = courses.filter(c => c.offered && c.semester === 1)
-  const hj2 = courses.filter(c => c.offered && c.semester === 2)
+  const hj1        = courses.filter(c =>  c.offered && c.semester === 1)
+  const hj2        = courses.filter(c =>  c.offered && c.semester === 2)
   const notOffered = courses.filter(c => !c.offered)
 
   const runOptimization = async () => {
@@ -79,77 +120,112 @@ export default function OptimizePage() {
     if (!over || active.id === over.id) return
 
     const draggedName = active.id as string
-    const targetName = over.id as string
-
+    const targetName  = over.id  as string
     const dragged = courses.find(c => c.name === draggedName)
-    const target = courses.find(c => c.name === targetName)
+    const target  = courses.find(c => c.name === targetName)
     if (!dragged || !target) return
 
-    // Swap semester assignments (optimistic update)
     const previousCourses = courses
     const newCourses = courses.map(c => {
-      if (c.name === draggedName) return { ...c, semester: target.semester, offered: target.offered }
-      if (c.name === targetName) return { ...c, semester: dragged.semester, offered: dragged.offered }
+      if (c.name === draggedName) return { ...c, semester: target.semester,  offered: target.offered }
+      if (c.name === targetName)  return { ...c, semester: dragged.semester, offered: dragged.offered }
       return c
     })
     setCourses(newCourses as CourseStats[])
 
-    // Persist changes to backend
     setReassigning(true)
     try {
-      await api.updateCourse(draggedName, { offered: target.offered ?? false, semester: target.semester ?? undefined })
-      await api.updateCourse(targetName, { offered: dragged.offered, semester: dragged.semester ?? undefined })
+      await api.updateCourse(draggedName, { offered: target.offered  ?? false, semester: target.semester  ?? undefined })
+      await api.updateCourse(targetName,  { offered: dragged.offered,          semester: dragged.semester ?? undefined })
       await api.runAssignmentOptimization()
     } catch {
-      // Roll back optimistic update on failure
       setCourses(previousCourses)
     } finally {
       setReassigning(false)
     }
   }
 
-  if (loading) return <div className="text-gray-500 mt-8">Lade Kurse…</div>
+  if (loading) return (
+    <div className="flex items-center gap-3 mt-16 justify-center text-t2">
+      <div className="w-5 h-5 rounded-full border-2 border-border border-t-accent animate-spin-slow" />
+      <span className="text-sm">Lade Kurse…</span>
+    </div>
+  )
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Optimierung & Kursauswahl</h1>
+      <div className="flex items-center justify-between mb-6 stagger-1">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-t1 mb-1">Optimierung</h1>
+          <p className="text-sm text-t2">ILP-Algorithmus für maximale Schülerzufriedenheit</p>
+        </div>
         {optimized && (
           <button
             onClick={() => navigate('/results')}
-            className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700"
+            className="flex items-center gap-2 bg-ok text-surface px-5 py-2.5 rounded-xl font-semibold text-sm
+              hover:bg-ok/90 transition-all duration-200 hover:shadow-glow active:scale-[0.97]"
           >
-            Ergebnisse ansehen →
+            Ergebnisse ansehen
+            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
           </button>
         )}
       </div>
 
       {!optimized ? (
-        <div className="text-center py-16">
-          <p className="text-gray-600 mb-6">Der Algorithmus wählt automatisch die 8 besten Kurse aus und teilt die Schüler optimal zu.</p>
+        <div className="flex flex-col items-center justify-center py-20 stagger-2">
+          <div className="w-20 h-20 rounded-3xl bg-accent/[0.08] border border-accent/15 flex items-center justify-center mb-8">
+            <svg viewBox="0 0 32 32" className="w-10 h-10 text-accent" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="16" cy="16" r="12" />
+              <path d="M16 8v8l5 3" />
+              <path d="M8 4l2 3M24 4l-2 3M4 24l3-2M28 24l-3-2" />
+            </svg>
+          </div>
+          <p className="text-t2 text-center max-w-sm mb-8 leading-relaxed text-sm">
+            Der Algorithmus wählt automatisch die{' '}
+            <strong className="text-t1 font-semibold">8 besten Kurse</strong>{' '}
+            aus und teilt die Schüler optimal zu — maximale Zufriedenheit durch{' '}
+            <em className="not-italic text-accent">Integer Linear Programming</em>.
+          </p>
           <button
             onClick={runOptimization}
             disabled={optimizing}
-            className="bg-blue-600 text-white px-8 py-3 rounded-xl text-lg font-medium hover:bg-blue-700 disabled:opacity-40"
+            className="flex items-center gap-3 bg-accent text-surface px-10 py-4 rounded-2xl font-bold
+              hover:bg-accent/90 disabled:opacity-50 transition-all duration-200
+              hover:shadow-glow active:scale-[0.97] text-sm tracking-wide"
           >
-            {optimizing ? '⏳ Optimierung läuft…' : '▶ Optimierung starten'}
+            {optimizing ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-current/30 border-t-current animate-spin-slow" />
+                Optimierung läuft…
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 16 16" className="w-4 h-4" fill="currentColor">
+                  <polygon points="5,2 14,8 5,14" />
+                </svg>
+                Optimierung starten
+              </>
+            )}
           </button>
         </div>
       ) : (
-        <div>
+        <div className="stagger-2">
           {reassigning && (
-            <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm">
-              ⏳ Zuteilung wird neu berechnet…
+            <div className="mb-4 px-4 py-3 bg-accent/[0.06] border border-accent/15 rounded-xl flex items-center gap-3">
+              <div className="w-4 h-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin-slow flex-shrink-0" />
+              <span className="text-sm text-accent font-medium">Zuteilung wird neu berechnet…</span>
             </div>
           )}
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-xs text-t3 mb-4">
             Kurse per Drag & Drop zwischen den Halbjahren oder in „Nicht angeboten" verschieben.
           </p>
           <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-3 gap-4">
-              <Column title="Halbjahr 1" courses={hj1} color="blue" />
-              <Column title="Halbjahr 2" courses={hj2} color="purple" />
-              <Column title="Nicht angeboten" courses={notOffered} color="gray" />
+              <Column col={COLUMNS[0]} courses={hj1} />
+              <Column col={COLUMNS[1]} courses={hj2} />
+              <Column col={COLUMNS[2]} courses={notOffered} />
             </div>
           </DndContext>
         </div>

@@ -5,10 +5,10 @@ import type { UploadResult } from '../types'
 
 export default function UploadPage() {
   const navigate = useNavigate()
-  const [dragging, setDragging] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<UploadResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [dragging, setDragging]   = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [result, setResult]       = useState<UploadResult | null>(null)
+  const [error, setError]         = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => () => {
@@ -27,7 +27,7 @@ export default function UploadPage() {
       const res = await api.uploadCsv(file)
       setResult(res)
       if (timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(() => navigate('/editor'), 1500)
+      timerRef.current = setTimeout(() => navigate('/editor'), 2000)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unbekannter Fehler')
     } finally {
@@ -43,19 +43,27 @@ export default function UploadPage() {
   }, [handleFile])
 
   return (
-    <div className="max-w-lg mx-auto mt-16">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">CSV hochladen</h1>
+    <div className="max-w-md mx-auto mt-10 stagger-1">
+      <div className="mb-8 stagger-1">
+        <h1 className="font-display text-3xl font-bold text-t1 mb-1.5">CSV hochladen</h1>
+        <p className="text-t2 text-sm">Schülerpräferenzen im CSV-Format importieren</p>
+      </div>
 
       <label
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setDragging(false)
-          }
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false)
         }}
         onDrop={onDrop}
-        className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-16 cursor-pointer transition-colors
-          ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-white'}`}
+        className={`stagger-2 relative flex flex-col items-center justify-center rounded-2xl p-16 cursor-pointer
+          transition-all duration-300 border-2
+          ${result
+            ? 'border-ok/50 bg-ok/[0.04] scale-[1.01]'
+            : dragging
+            ? 'border-accent bg-accent/[0.05] scale-[1.02]'
+            : loading
+            ? 'border-border bg-elevated'
+            : 'border-border hover:border-accent/50 hover:bg-accent/[0.025] bg-surface'}`}
       >
         <input
           type="file"
@@ -67,33 +75,62 @@ export default function UploadPage() {
             if (file) handleFile(file)
           }}
         />
+
         {loading ? (
-          <p className="text-blue-600 font-medium">Wird verarbeitet…</p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 rounded-full border-2 border-accent/25 border-t-accent animate-spin-slow" />
+            <p className="text-t2 text-sm font-medium">Wird verarbeitet…</p>
+          </div>
+        ) : result ? (
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="w-14 h-14 rounded-full bg-ok/10 border border-ok/20 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-7 h-7 text-ok" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-display font-semibold text-t1 text-lg">{result.total} Schüler importiert</p>
+              <p className="text-sm text-t2 mt-0.5">
+                <span className="text-ok">{result.valid_count} gültig</span>
+                {result.invalid_count > 0 && (
+                  <> · <span className="text-err">{result.invalid_count} mit Fehlern</span></>
+                )}
+              </p>
+            </div>
+            <p className="text-xs text-t3">Weiterleitung zum Editor…</p>
+          </div>
         ) : (
-          <>
-            <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <p className="text-gray-600">CSV-Datei hier ablegen oder klicken</p>
-          </>
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className={`w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300
+              ${dragging ? 'border-accent text-accent scale-110' : 'border-border text-t3'}`}>
+              <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <div>
+              <p className={`font-medium transition-colors duration-200 ${dragging ? 'text-accent' : 'text-t1'}`}>
+                {dragging ? 'Loslassen zum Hochladen' : 'CSV-Datei hier ablegen'}
+              </p>
+              <p className="text-xs text-t3 mt-1">oder klicken zum Auswählen · max. 5 MB</p>
+            </div>
+          </div>
         )}
       </label>
 
-      {result && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="font-medium text-green-800">
-            ✓ {result.total} Schüler geladen — {result.valid_count} gültig, {result.invalid_count} mit Fehlern
-          </p>
-          <p className="text-sm text-green-600 mt-1">Weiterleitung zum Editor…</p>
+      {error && (
+        <div className="stagger-3 mt-4 p-4 bg-err/[0.05] border border-err/20 rounded-xl flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-err/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-err text-xs font-bold">!</span>
+          </div>
+          <p className="text-err text-sm leading-relaxed">{error}</p>
         </div>
       )}
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
+      <div className="stagger-3 mt-6 p-4 bg-elevated border border-border rounded-xl">
+        <p className="text-xs font-semibold text-t2 mb-2 uppercase tracking-wider">Erwartetes Format</p>
+        <code className="text-xs text-t3 font-mono block">Nr.;Name;Kurs1;Kurs2;…;Kurs8</code>
+        <p className="text-xs text-t3 mt-1.5">Genau 8 Wunschkurse · Priorität 1–8 · keine Duplikate</p>
+      </div>
     </div>
   )
 }

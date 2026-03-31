@@ -1,3 +1,76 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Color tokens ──────────────────────────────────────────── */
+:root {
+  --c-bg:       245 243 238;
+  --c-surface:  255 255 255;
+  --c-elevated: 250 248 244;
+  --c-border:   226 221 214;
+  --c-accent:   217 119   6;
+  --c-t1:        13  15  20;
+  --c-t2:       107 114 128;
+  --c-t3:       156 163 175;
+  --c-ok:         5 150 105;
+  --c-err:      220  38  38;
+}
+
+.dark {
+  --c-bg:         8   9  14;
+  --c-surface:   15  17  24;
+  --c-elevated:  22  27  39;
+  --c-border:    31  37  53;
+  --c-accent:   245 158  11;
+  --c-t1:       236 240 248;
+  --c-t2:       120 130 161;
+  --c-t3:        60  69  98;
+  --c-ok:        16 185 129;
+  --c-err:      239  68  68;
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: rgb(var(--c-bg));
+  color: rgb(var(--c-t1));
+  font-family: 'DM Sans', sans-serif;
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* ── Custom Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgb(var(--c-border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-t3)); }
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Staggered entrance ────────────────────────────────────── */
+@layer utilities {
+  .stagger-1 { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1)   0ms both; }
+  .stagger-2 { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1)  70ms both; }
+  .stagger-3 { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 140ms both; }
+  .stagger-4 { animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) 210ms both; }
+
+  .animate-spin-slow {
+    animation: spin 1s linear infinite;
+  }
+}
