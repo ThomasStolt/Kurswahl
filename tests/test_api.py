@@ -53,3 +53,52 @@ def test_upload_rejects_non_csv(client):
         files={"file": ("test.txt", io.BytesIO(b"hello"), "text/plain")},
     )
     assert response.status_code == 400
+
+
+def test_get_students_after_upload(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.students.session.load", side_effect=fake_load):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        response = client.get("/api/students")
+    assert response.status_code == 200
+    students = response.json()
+    assert len(students) == 2
+    assert students[0]["nr"] == 5
+
+
+def test_patch_student_name(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.students.session.load", side_effect=fake_load), \
+         patch("app.routers.students.session.save", side_effect=fake_save):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        response = client.patch("/api/students/5", json={"name": "Max Mustermann"})
+    assert response.status_code == 200
+    assert response.json()["name"] == "Max Mustermann"
+
+
+def test_get_courses_with_demand(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.courses.session.load", side_effect=fake_load):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        response = client.get("/api/courses")
+    assert response.status_code == 200
+    courses = response.json()
+    assert len(courses) == 18
+    kochen = next(c for c in courses if c["name"] == "Kochen")
+    assert kochen["max_students"] == 16
+    assert kochen["total_interested"] > 0
