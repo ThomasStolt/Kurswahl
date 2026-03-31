@@ -1,0 +1,66 @@
+<h2>Design: Architektur</h2>
+<p class="subtitle">Abschnitt 1 von 4 — Gesamtstruktur der App</p>
+
+<div class="section">
+  <div style="background:#1e1e2e;border-radius:12px;padding:24px;font-family:monospace;font-size:13px;color:#cdd6f4;line-height:1.8;">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;">
+
+      <!-- Frontend -->
+      <div style="background:#313244;border-radius:8px;padding:16px;">
+        <div style="color:#89b4fa;font-weight:bold;margin-bottom:12px;font-size:14px;">⚛ React Frontend</div>
+        <div style="color:#a6e3a1;font-size:12px;margin-bottom:8px;">Container: nginx:alpine</div>
+        <div style="color:#bac2de;font-size:12px;">
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">📤 CSV Upload</div>
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">✏️ Daten-Editor (Fehler korrigieren)</div>
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">🎯 Kurs-Auswahl &amp; Halbjahr</div>
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">📊 Ergebnisse (pro Kurs + SuS)</div>
+          <div style="padding:4px 0;">💾 Export CSV / Excel</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:60px;color:#89dceb;font-size:18px;">
+        <div>REST API</div>
+        <div>⟷</div>
+        <div style="font-size:11px;color:#6c7086;">JSON / multipart</div>
+      </div>
+
+      <!-- Backend -->
+      <div style="background:#313244;border-radius:8px;padding:16px;">
+        <div style="color:#cba6f7;font-weight:bold;margin-bottom:12px;font-size:14px;">🐍 FastAPI Backend</div>
+        <div style="color:#a6e3a1;font-size:12px;margin-bottom:8px;">Container: python:3.12-slim</div>
+        <div style="color:#bac2de;font-size:12px;">
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">📥 CSV-Parser &amp; Validierung</div>
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">🧮 Optimierungs-Algorithmus (PuLP)</div>
+          <div style="padding:4px 0;border-bottom:1px solid #45475a;">💾 Session-Datenhaltung (JSON/SQLite)</div>
+          <div style="padding:4px 0;">📦 Excel-Export (openpyxl)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Docker Compose Box -->
+    <div style="margin-top:16px;border:1px dashed #45475a;border-radius:8px;padding:12px;text-align:center;">
+      <span style="color:#f38ba8;font-size:12px;">🐳 docker-compose.yml</span>
+      <span style="color:#6c7086;font-size:12px;margin-left:16px;">Port 80 → nginx → React &nbsp;|&nbsp; Port 8000 → FastAPI (intern)</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Workflow-Schritte</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+    <div style="background:#313244;border-radius:6px;padding:8px 14px;color:#a6e3a1;font-size:13px;">1. CSV hochladen</div>
+    <div style="color:#6c7086;align-self:center;">→</div>
+    <div style="background:#313244;border-radius:6px;padding:8px 14px;color:#89b4fa;font-size:13px;">2. Fehler prüfen &amp; korrigieren</div>
+    <div style="color:#6c7086;align-self:center;">→</div>
+    <div style="background:#313244;border-radius:6px;padding:8px 14px;color:#cba6f7;font-size:13px;">3. Optimierung starten</div>
+    <div style="color:#6c7086;align-self:center;">→</div>
+    <div style="background:#313244;border-radius:6px;padding:8px 14px;color:#fab387;font-size:13px;">4. Kurse &amp; HJ anpassen</div>
+    <div style="color:#6c7086;align-self:center;">→</div>
+    <div style="background:#313244;border-radius:6px;padding:8px 14px;color:#f9e2af;font-size:13px;">5. Ergebnis &amp; Export</div>
+  </div>
+</div>
+
+<div class="section" style="background:#1e1e2e;border-radius:8px;padding:16px;margin-top:8px;">
+  <p style="color:#bac2de;font-size:13px;margin:0;">Sieht das so aus? Passt die Gesamtstruktur und der Workflow?</p>
+</div>

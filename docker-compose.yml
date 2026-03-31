@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - kurswahl_data:/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  kurswahl_data:

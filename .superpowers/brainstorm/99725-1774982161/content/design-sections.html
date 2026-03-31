@@ -1,0 +1,147 @@
+<h2>Design: Details</h2>
+<p class="subtitle">Abschnitte 2–4: Datenmodell · Algorithmus · UI-Screens</p>
+
+<!-- SECTION 2: Data Model -->
+<div class="section">
+  <h3>2 · Datenmodell</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+    <div style="background:#1e1e2e;border-radius:8px;padding:14px;font-size:12px;font-family:monospace;">
+      <div style="color:#89b4fa;font-weight:bold;margin-bottom:8px;">Student</div>
+      <div style="color:#a6e3a1;">nr: int</div>
+      <div style="color:#cdd6f4;">preferences: dict</div>
+      <div style="color:#6c7086;font-size:11px;">  {Kursname → 1..8 | 0}</div>
+      <div style="color:#f38ba8;">valid: bool</div>
+      <div style="color:#6c7086;font-size:11px;">  false wenn Fehler</div>
+    </div>
+    <div style="background:#1e1e2e;border-radius:8px;padding:14px;font-size:12px;font-family:monospace;">
+      <div style="color:#cba6f7;font-weight:bold;margin-bottom:8px;">Course</div>
+      <div style="color:#a6e3a1;">name: str</div>
+      <div style="color:#cdd6f4;">min_students: int = 15</div>
+      <div style="color:#cdd6f4;">max_students: int = 22</div>
+      <div style="color:#f9e2af;">  (Kochen → 16)</div>
+      <div style="color:#cdd6f4;">offered: bool</div>
+      <div style="color:#cdd6f4;">semester: 1 | 2 | null</div>
+    </div>
+    <div style="background:#1e1e2e;border-radius:8px;padding:14px;font-size:12px;font-family:monospace;">
+      <div style="color:#fab387;font-weight:bold;margin-bottom:8px;">Assignment</div>
+      <div style="color:#a6e3a1;">student_nr: int</div>
+      <div style="color:#cdd6f4;">course_hj1: str</div>
+      <div style="color:#cdd6f4;">course_hj2: str</div>
+      <div style="color:#cdd6f4;">score_hj1: int</div>
+      <div style="color:#cdd6f4;">score_hj2: int</div>
+      <div style="color:#6c7086;font-size:11px;">  (8=Prio1, 1=Prio8, 0=kein Wunsch)</div>
+    </div>
+  </div>
+  <div style="margin-top:10px;background:#1e1e2e;border-radius:6px;padding:10px;font-size:12px;color:#6c7086;">
+    Session-State wird im Backend als SQLite-Datei gehalten (kein separater DB-Server nötig). Beim nächsten Upload wird alles zurückgesetzt.
+  </div>
+</div>
+
+<!-- SECTION 3: Algorithm -->
+<div class="section">
+  <h3>3 · Optimierungsalgorithmus (PuLP ILP)</h3>
+  <div style="background:#1e1e2e;border-radius:8px;padding:16px;font-size:13px;color:#cdd6f4;margin-top:12px;">
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:start;">
+      <div style="color:#a6e3a1;font-weight:bold;">Ziel</div>
+      <div>Maximiere Gesamtzufriedenheit: Σ Punkte[SuS][Kurs] × Zuteilung[SuS][Kurs]<br>
+        <span style="color:#6c7086;font-size:11px;">Prio 1 = 8 Pkt, Prio 2 = 7 Pkt, ..., Prio 8 = 1 Pkt, kein Wunsch = −5 Pkt (Strafe)</span>
+      </div>
+
+      <div style="color:#89b4fa;font-weight:bold;padding-top:8px;">Variablen</div>
+      <div style="padding-top:8px;">
+        <span style="color:#cba6f7;">offer[c]</span> ∈ {0,1} — wird Kurs c angeboten?<br>
+        <span style="color:#cba6f7;">sem[c]</span> ∈ {1,2} — in welchem Halbjahr?<br>
+        <span style="color:#cba6f7;">assign[s][c]</span> ∈ {0,1} — wird SuS s Kurs c zugeteilt?
+      </div>
+
+      <div style="color:#f38ba8;font-weight:bold;padding-top:8px;">Constraints</div>
+      <div style="padding-top:8px;">
+        • Genau 8 Kurse angeboten (4 pro HJ)<br>
+        • Jede/r SuS genau 1 Kurs pro Halbjahr<br>
+        • Min 15 / Max 22 SuS pro Kurs (Kochen max 16)<br>
+        • Zuteilung nur zu angebotenen Kursen
+      </div>
+
+      <div style="color:#f9e2af;font-weight:bold;padding-top:8px;">Laufzeit</div>
+      <div style="padding-top:8px;">~70 SuS × 18 Kurse → &lt; 2 Sekunden mit CBC-Solver</div>
+    </div>
+  </div>
+  <div style="margin-top:8px;background:#1e1e2e;border-radius:6px;padding:10px;font-size:12px;color:#6c7086;">
+    Nach manuellem Eingriff (Admin ändert Kursauswahl oder Halbjahr) wird nur die Schüler-Zuteilung neu berechnet — mit fixen Kursen/Halbjahren.
+  </div>
+</div>
+
+<!-- SECTION 4: UI Screens -->
+<div class="section">
+  <h3>4 · UI-Screens (5 Schritte)</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+
+    <div style="background:#1e1e2e;border-radius:8px;padding:12px;">
+      <div style="color:#a6e3a1;font-size:11px;font-weight:bold;margin-bottom:6px;">SCREEN 1 · Upload</div>
+      <div class="mockup" style="background:#313244;border-radius:6px;padding:10px;font-size:12px;color:#bac2de;">
+        <div style="border:2px dashed #45475a;border-radius:6px;padding:16px;text-align:center;color:#6c7086;">
+          CSV hier ablegen oder klicken
+        </div>
+        <div style="margin-top:8px;color:#6c7086;font-size:11px;">✓ Validierung läuft automatisch beim Upload</div>
+      </div>
+    </div>
+
+    <div style="background:#1e1e2e;border-radius:8px;padding:12px;">
+      <div style="color:#89b4fa;font-size:11px;font-weight:bold;margin-bottom:6px;">SCREEN 2 · Daten-Editor</div>
+      <div class="mockup" style="background:#313244;border-radius:6px;padding:10px;font-size:12px;">
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:4px;font-size:11px;color:#bac2de;">
+          <span style="color:#6c7086;">Nr.</span><span style="color:#6c7086;">Prioritäten (editierbar)</span><span style="color:#6c7086;">Status</span>
+          <span>5</span><span style="color:#cdd6f4;">Kochen:2, Podcast:1 ...</span><span style="color:#a6e3a1;">✓</span>
+          <span>8</span><span style="color:#cdd6f4;">...</span><span style="color:#f38ba8;">⚠ Duplikate</span>
+          <span>66</span><span style="color:#cdd6f4;">...</span><span style="color:#f38ba8;">⚠ Wert 9</span>
+        </div>
+        <div style="margin-top:8px;color:#6c7086;font-size:11px;">Fehlerhafte Zeilen rot markiert, inline editierbar</div>
+      </div>
+    </div>
+
+    <div style="background:#1e1e2e;border-radius:8px;padding:12px;">
+      <div style="color:#cba6f7;font-size:11px;font-weight:bold;margin-bottom:6px;">SCREEN 3 · Optimierung &amp; Kursauswahl</div>
+      <div class="mockup" style="background:#313244;border-radius:6px;padding:10px;font-size:12px;color:#bac2de;">
+        <div style="font-size:11px;">
+          <div style="color:#a6e3a1;margin-bottom:4px;">▶ Optimierung starten</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+            <div style="background:#45475a;border-radius:4px;padding:6px;font-size:10px;">
+              <div style="color:#89b4fa;margin-bottom:2px;">HJ 1</div>
+              Kochen · Podcast · Theater · Schach
+            </div>
+            <div style="background:#45475a;border-radius:4px;padding:6px;font-size:10px;">
+              <div style="color:#cba6f7;margin-bottom:2px;">HJ 2</div>
+              Debating · Psychologie · Medien · Häkeln
+            </div>
+          </div>
+          <div style="color:#6c7086;font-size:10px;margin-top:4px;">Kurse per Drag &amp; Drop zwischen HJ verschieben</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#1e1e2e;border-radius:8px;padding:12px;">
+      <div style="color:#f9e2af;font-size:11px;font-weight:bold;margin-bottom:6px;">SCREEN 4+5 · Ergebnis &amp; Export</div>
+      <div class="mockup" style="background:#313244;border-radius:6px;padding:10px;font-size:12px;color:#bac2de;">
+        <div style="font-size:11px;">
+          <div style="display:flex;gap:8px;margin-bottom:6px;">
+            <span style="background:#45475a;padding:2px 8px;border-radius:4px;font-size:10px;">Pro Kurs</span>
+            <span style="background:#1e1e2e;padding:2px 8px;border-radius:4px;font-size:10px;color:#6c7086;">Pro SuS</span>
+          </div>
+          <div style="font-size:10px;color:#6c7086;">
+            Kochen (HJ1) · 16 SuS · Ø Prio: 2.4<br>
+            Nr.5 · Nr.22 · Nr.41 ...
+          </div>
+          <div style="margin-top:6px;display:flex;gap:6px;">
+            <span style="background:#a6e3a1;color:#1e1e2e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;">↓ CSV</span>
+            <span style="background:#89b4fa;color:#1e1e2e;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:bold;">↓ Excel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="background:#1e1e2e;border-radius:8px;padding:14px;margin-top:8px;font-size:13px;color:#bac2de;">
+  Passt das Gesamtbild? Gibt es etwas, das du anders haben möchtest?
+</div>

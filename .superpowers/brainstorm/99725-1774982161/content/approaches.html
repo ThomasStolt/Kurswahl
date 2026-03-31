@@ -1,0 +1,62 @@
+<h2>Architektur-Ansätze</h2>
+<p class="subtitle">Welcher Ansatz passt am besten für die Kurswahl-App?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Monolithisch: Python + HTMX</h3>
+      <p>Ein einziger Python-Dienst (FastAPI) rendert das HTML serverseitig. HTMX übernimmt dynamische Updates ohne separates JS-Framework. Alles in einem Docker-Container.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Vorteile</h4><ul>
+          <li>Einfachster Aufbau</li>
+          <li>Ein Container, eine Sprache</li>
+          <li>Python-Optimierungsbibliotheken direkt verfügbar</li>
+        </ul></div>
+        <div class="cons"><h4>Nachteile</h4><ul>
+          <li>Weniger interaktive Tabellen-Bearbeitung</li>
+          <li>Eingeschränkte UX für CSV-Editor</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B ⭐ Empfohlen</div>
+    <div class="content">
+      <h3>FastAPI Backend + React Frontend</h3>
+      <p>Python FastAPI übernimmt CSV-Import, Optimierungsalgorithmus (PuLP/OR-Tools) und Export. React (TypeScript) liefert eine interaktive UI mit editierbarer Tabelle. Docker Compose mit zwei Services.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Vorteile</h4><ul>
+          <li>Beste UX für interaktiven CSV-Editor</li>
+          <li>Klare Trennung: Logik vs. UI</li>
+          <li>Optimaler Einsatz von Python für den Algorithmus</li>
+          <li>Gut erweiterbar</li>
+        </ul></div>
+        <div class="cons"><h4>Nachteile</h4><ul>
+          <li>Zwei Services zu warten</li>
+          <li>Etwas mehr Setup-Aufwand</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Next.js Full-Stack + Python-Microservice</h3>
+      <p>Next.js (TypeScript) für UI und API-Routen. Separater Python-Dienst nur für den Optimierungsalgorithmus. Drei Container (Next.js, Python, Nginx).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Vorteile</h4><ul>
+          <li>Modernes Full-Stack-Framework</li>
+          <li>SSR + interaktive Komponenten</li>
+        </ul></div>
+        <div class="cons"><h4>Nachteile</h4><ul>
+          <li>Höchste Komplexität</li>
+          <li>Für diesen Use-Case überdimensioniert</li>
+          <li>Drei Container zu koordinieren</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
