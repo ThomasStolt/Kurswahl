@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import type { UploadResult } from '../types'
@@ -9,20 +9,31 @@ export default function UploadPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<UploadResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+  }, [])
 
   const handleFile = useCallback(async (file: File) => {
+    if (loading) return
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setError('Bitte eine CSV-Datei hochladen.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       const res = await api.uploadCsv(file)
       setResult(res)
-      setTimeout(() => navigate('/editor'), 1500)
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => navigate('/editor'), 1500)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unbekannter Fehler')
     } finally {
       setLoading(false)
     }
-  }, [navigate])
+  }, [navigate, loading])
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -37,7 +48,11 @@ export default function UploadPage() {
 
       <label
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setDragging(false)
+          }
+        }}
         onDrop={onDrop}
         className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-16 cursor-pointer transition-colors
           ${dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-white'}`}
@@ -46,7 +61,11 @@ export default function UploadPage() {
           type="file"
           accept=".csv"
           className="hidden"
-          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (file) handleFile(file)
+          }}
         />
         {loading ? (
           <p className="text-blue-600 font-medium">Wird verarbeitet…</p>
