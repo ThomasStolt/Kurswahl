@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app import session
-from app.models import CourseStats, CourseUpdate
+from app.models import Course, CourseStats, CourseUpdate
 
 router = APIRouter(prefix="/api")
 
@@ -25,7 +25,7 @@ def get_courses():
     return result
 
 
-@router.patch("/courses/{name}")
+@router.patch("/courses/{name}", response_model=Course)
 def update_course(name: str, update: CourseUpdate):
     data = session.load()
     course = next((c for c in data.courses if c.name == name), None)

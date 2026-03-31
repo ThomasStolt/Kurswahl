@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from app import session
-from app.models import StudentUpdate
+from app.models import Student, StudentUpdate
+from app.parser import validate_student
 
 router = APIRouter(prefix="/api")
 
 
-@router.get("/students")
+@router.get("/students", response_model=list[Student])
 def get_students():
     return session.load().students
 
@@ -20,7 +21,10 @@ def update_student(nr: int, update: StudentUpdate):
     if update.name is not None:
         student.name = update.name
     if update.preferences is not None:
-        from app.parser import validate_student
+        known_courses = {c.name for c in data.courses}
+        unknown = set(update.preferences) - known_courses
+        if unknown:
+            raise HTTPException(status_code=422, detail=f"Unbekannte Kurse: {', '.join(sorted(unknown))}")
         updated = validate_student(student.nr, student.name, update.preferences)
         student.preferences = updated.preferences
         student.valid = updated.valid
