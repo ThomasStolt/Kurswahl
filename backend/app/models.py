@@ -37,6 +37,32 @@ class Assignment(BaseModel):
     score_hj2: int
 
 
+class StudentScore(BaseModel):
+    student_nr: int
+    student_name: str
+    score_total: int        # 0-16
+    avg_priority: float     # average achieved priority (1.0-8.0)
+
+
+class CourseScore(BaseModel):
+    name: str
+    semester: int
+    avg_priority: float     # average priority of assigned students
+    student_count: int
+    max_students: int
+    fill_rate: float        # 0.0-1.0
+
+
+class ScoreReport(BaseModel):
+    score_achieved: int
+    score_maximum: int
+    score_percent: float
+    score_label: str        # "Exzellent", "Gut", etc.
+    score_description: str
+    student_scores: list[StudentScore]
+    course_scores: list[CourseScore]
+
+
 class SessionData(BaseModel):
     students: list[Student] = []
     courses: list[Course] = []
