@@ -4,7 +4,7 @@ import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
-import type { CourseStats } from '../types'
+import type { CourseStats, ScoreReport } from '../types'
 
 function CourseCard({ course }: { course: CourseStats }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -87,6 +87,24 @@ function Column({ col, courses }: { col: typeof COLUMNS[number]; courses: Course
   )
 }
 
+function scoreLabelColor(label: string) {
+  switch (label) {
+    case 'Exzellent': return 'text-ok'
+    case 'Gut': return 'text-yellow-600 dark:text-yellow-400'
+    case 'Akzeptabel': return 'text-orange-600 dark:text-orange-400'
+    default: return 'text-err'
+  }
+}
+
+function scoreLabelBg(label: string) {
+  switch (label) {
+    case 'Exzellent': return 'bg-ok/10 border-ok/20'
+    case 'Gut': return 'bg-yellow-500/10 border-yellow-500/20'
+    case 'Akzeptabel': return 'bg-orange-500/10 border-orange-500/20'
+    default: return 'bg-err/10 border-err/20'
+  }
+}
+
 export default function OptimizePage() {
   const navigate = useNavigate()
   const [courses, setCourses]     = useState<CourseStats[]>([])
@@ -94,6 +112,7 @@ export default function OptimizePage() {
   const [optimizing, setOptimizing] = useState(false)
   const [reassigning, setReassigning] = useState(false)
   const [optimized, setOptimized] = useState(false)
+  const [scoreReport, setScoreReport] = useState<ScoreReport | null>(null)
 
   useEffect(() => {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
@@ -110,6 +129,10 @@ export default function OptimizePage() {
       const updated = await api.getCourses()
       setCourses(updated)
       setOptimized(true)
+      try {
+        const results = await api.getResults()
+        setScoreReport(results.score_report)
+      } catch { /* score display is optional here */ }
     } finally {
       setOptimizing(false)
     }
@@ -126,6 +149,7 @@ export default function OptimizePage() {
     if (!dragged || !target) return
 
     const previousCourses = courses
+    const previousScore = scoreReport
     const newCourses = courses.map(c => {
       if (c.name === draggedName) return { ...c, semester: target.semester,  offered: target.offered }
       if (c.name === targetName)  return { ...c, semester: dragged.semester, offered: dragged.offered }
@@ -137,9 +161,11 @@ export default function OptimizePage() {
     try {
       await api.updateCourse(draggedName, { offered: target.offered  ?? false, semester: target.semester  ?? undefined })
       await api.updateCourse(targetName,  { offered: dragged.offered,          semester: dragged.semester ?? undefined })
-      await api.runAssignmentOptimization()
+      const result = await api.runAssignmentOptimization()
+      setScoreReport(result.score_report)
     } catch {
       setCourses(previousCourses)
+      setScoreReport(previousScore)
     } finally {
       setReassigning(false)
     }
@@ -212,6 +238,20 @@ export default function OptimizePage() {
         </div>
       ) : (
         <div className="stagger-2">
+          {/* Live Score Display */}
+          {scoreReport && (
+            <div className={`mb-4 p-4 rounded-xl border transition-all duration-300 ${scoreLabelBg(scoreReport.score_label)}`}>
+              <div className="flex items-center gap-3">
+                <span className={`font-display text-2xl font-bold tabular-nums ${scoreLabelColor(scoreReport.score_label)}`}>
+                  {scoreReport.score_percent.toFixed(1)}%
+                </span>
+                <span className={`text-sm font-medium ${scoreLabelColor(scoreReport.score_label)}`}>
+                  {scoreReport.score_label}
+                </span>
+                <span className="text-xs text-t3">— {scoreReport.score_description}</span>
+              </div>
+            </div>
+          )}
           {reassigning && (
             <div className="mb-4 px-4 py-3 bg-accent/[0.06] border border-accent/15 rounded-xl flex items-center gap-3">
               <div className="w-4 h-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin-slow flex-shrink-0" />
