@@ -35,6 +35,32 @@ export interface UploadResult {
   course_names: string[]
 }
 
+export interface StudentScore {
+  student_nr: number
+  student_name: string
+  score_total: number
+  avg_priority: number
+}
+
+export interface CourseScore {
+  name: string
+  semester: number
+  avg_priority: number
+  student_count: number
+  max_students: number
+  fill_rate: number
+}
+
+export interface ScoreReport {
+  score_achieved: number
+  score_maximum: number
+  score_percent: number
+  score_label: string
+  score_description: string
+  student_scores: StudentScore[]
+  course_scores: CourseScore[]
+}
+
 export interface ResultsData {
   by_course: {
     name: string
@@ -44,4 +70,5 @@ export interface ResultsData {
     count: number
   }[]
   by_student: Assignment[]
+  score_report: ScoreReport
 }

@@ -1,4 +1,4 @@
-import type { Student, Course, CourseStats, UploadResult, ResultsData } from './types'
+import type { Student, Course, CourseStats, UploadResult, ResultsData, ScoreReport } from './types'
 
 const BASE = '/api'
 
@@ -39,7 +39,7 @@ export const api = {
   runFullOptimization: (): Promise<{ offered: Course[]; assignment_count: number }> =>
     request('/optimize', { method: 'POST' }),
 
-  runAssignmentOptimization: (): Promise<{ assignment_count: number }> =>
+  runAssignmentOptimization: (): Promise<{ assignment_count: number; score_report: ScoreReport }> =>
     request('/optimize/assignments', { method: 'POST' }),
 
   getResults: (): Promise<ResultsData> => request('/results'),
