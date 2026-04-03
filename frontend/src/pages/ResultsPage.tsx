@@ -16,6 +16,24 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
+function labelColor(label: string) {
+  switch (label) {
+    case 'Exzellent': return 'text-ok'
+    case 'Gut': return 'text-yellow-600 dark:text-yellow-400'
+    case 'Akzeptabel': return 'text-orange-600 dark:text-orange-400'
+    default: return 'text-err'
+  }
+}
+
+function labelBg(label: string) {
+  switch (label) {
+    case 'Exzellent': return 'bg-ok/10 border-ok/20'
+    case 'Gut': return 'bg-yellow-500/10 border-yellow-500/20'
+    case 'Akzeptabel': return 'bg-orange-500/10 border-orange-500/20'
+    default: return 'bg-err/10 border-err/20'
+  }
+}
+
 export default function ResultsPage() {
   const [results, setResults] = useState<ResultsData | null>(null)
   const [tab, setTab]         = useState<'course' | 'student'>('course')
@@ -39,6 +57,8 @@ export default function ResultsPage() {
     <div className="mt-8 p-4 bg-err/[0.05] border border-err/20 rounded-xl text-err text-sm">{error}</div>
   )
   if (!results) return null
+
+  const r = results.score_report
 
   return (
     <div>
@@ -71,8 +91,24 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Score Header */}
+      <div className={`stagger-2 mb-6 p-5 rounded-2xl border ${labelBg(r.score_label)}`}>
+        <div className="flex items-center gap-4">
+          <span className={`font-display text-4xl font-bold ${labelColor(r.score_label)}`}>
+            {r.score_percent.toFixed(1)}%
+          </span>
+          <div>
+            <span className={`font-semibold text-sm ${labelColor(r.score_label)}`}>{r.score_label}</span>
+            <p className="text-xs text-t2 mt-0.5">{r.score_description}</p>
+          </div>
+        </div>
+        <p className="text-xs text-t3 mt-2">
+          Score: {r.score_achieved}/{r.score_maximum} Punkte
+        </p>
+      </div>
+
       {/* Tab switcher */}
-      <div className="stagger-2 flex gap-1 p-1 bg-elevated border border-border rounded-xl w-fit mb-6">
+      <div className="stagger-3 flex gap-1 p-1 bg-elevated border border-border rounded-xl w-fit mb-6">
         {(['course', 'student'] as const).map(t => (
           <button
             key={t}
@@ -88,52 +124,69 @@ export default function ResultsPage() {
       </div>
 
       {tab === 'course' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-4">
           {results.by_course
             .sort((a, b) => (a.semester ?? 0) - (b.semester ?? 0))
-            .map(course => (
-              <div
-                key={course.name}
-                className="bg-surface border border-border rounded-2xl p-5
-                  hover:border-accent/20 hover:shadow-card-md transition-all duration-200"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-display font-semibold text-t1">{course.name}</h3>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0 ml-2
-                      ${course.semester === 1
-                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        : 'bg-violet-500/10 text-violet-600 dark:text-violet-400'}`}
-                  >
-                    HJ {course.semester}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-t2 mb-4">
-                  <span className="font-medium">{course.count} Schüler</span>
-                  <span className="w-1 h-1 rounded-full bg-border" />
-                  <span>Ø Priorität {course.avg_score > 0 ? (9 - course.avg_score).toFixed(1) : '–'}</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {course.students.map(s => (
+            .map(course => {
+              const cs = r.course_scores.find(c => c.name === course.name)
+              return (
+                <div
+                  key={course.name}
+                  className="bg-surface border border-border rounded-2xl p-5
+                    hover:border-accent/20 hover:shadow-card-md transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-display font-semibold text-t1">{course.name}</h3>
                     <span
-                      key={s.nr}
-                      className="bg-elevated border border-border text-t2 text-xs px-2 py-0.5 rounded-full"
+                      className={`text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0 ml-2
+                        ${course.semester === 1
+                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          : 'bg-violet-500/10 text-violet-600 dark:text-violet-400'}`}
                     >
-                      {s.name || `Nr. ${s.nr}`}
+                      HJ {course.semester}
                     </span>
-                  ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-t2 mb-2">
+                    <span className="font-medium">{course.count} Schüler</span>
+                    <span className="w-1 h-1 rounded-full bg-border" />
+                    <span>Ø Priorität {course.avg_score > 0 ? (9 - course.avg_score).toFixed(1) : '–'}</span>
+                  </div>
+                  {cs && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-xs text-t3 mb-1">
+                        <span>Auslastung</span>
+                        <span>{cs.student_count}/{cs.max_students} ({(cs.fill_rate * 100).toFixed(0)}%)</span>
+                      </div>
+                      <div className="h-1.5 bg-elevated rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(cs.fill_rate * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {course.students.map(s => (
+                      <span
+                        key={s.nr}
+                        className="bg-elevated border border-border text-t2 text-xs px-2 py-0.5 rounded-full"
+                      >
+                        {s.name || `Nr. ${s.nr}`}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
         </div>
       )}
 
       {tab === 'student' && (
-        <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-card stagger-3">
+        <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-card stagger-4">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-elevated">
-                {['Nr.', 'Name', 'HJ1 Kurs', 'Prio', 'HJ2 Kurs', 'Prio'].map(h => (
+                {['Nr.', 'Name', 'HJ1 Kurs', 'Prio', 'HJ2 Kurs', 'Prio', 'Gesamt', 'Ø Prio'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-t2 text-xs font-semibold uppercase tracking-wider">
                     {h}
                   </th>
@@ -143,16 +196,25 @@ export default function ResultsPage() {
             <tbody className="divide-y divide-border">
               {results.by_student
                 .sort((a, b) => a.student_nr - b.student_nr)
-                .map(a => (
-                  <tr key={a.student_nr} className="hover:bg-elevated transition-colors duration-100">
-                    <td className="px-4 py-2.5 font-mono text-t3 text-xs">{a.student_nr}</td>
-                    <td className="px-4 py-2.5 font-medium text-t1">{a.student_name || '–'}</td>
-                    <td className="px-4 py-2.5 text-t2 text-xs">{a.course_hj1}</td>
-                    <td className="px-4 py-2.5"><ScoreBadge score={a.score_hj1} /></td>
-                    <td className="px-4 py-2.5 text-t2 text-xs">{a.course_hj2}</td>
-                    <td className="px-4 py-2.5"><ScoreBadge score={a.score_hj2} /></td>
-                  </tr>
-                ))}
+                .map(a => {
+                  const ss = r.student_scores.find(s => s.student_nr === a.student_nr)
+                  return (
+                    <tr key={a.student_nr} className="hover:bg-elevated transition-colors duration-100">
+                      <td className="px-4 py-2.5 font-mono text-t3 text-xs">{a.student_nr}</td>
+                      <td className="px-4 py-2.5 font-medium text-t1">{a.student_name || '–'}</td>
+                      <td className="px-4 py-2.5 text-t2 text-xs">{a.course_hj1}</td>
+                      <td className="px-4 py-2.5"><ScoreBadge score={a.score_hj1} /></td>
+                      <td className="px-4 py-2.5 text-t2 text-xs">{a.course_hj2}</td>
+                      <td className="px-4 py-2.5"><ScoreBadge score={a.score_hj2} /></td>
+                      <td className="px-4 py-2.5 font-mono text-xs text-t1 font-semibold">
+                        {ss ? `${ss.score_total}/16` : '–'}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-t2">
+                        {ss ? `Ø ${ss.avg_priority.toFixed(1)}` : '–'}
+                      </td>
+                    </tr>
+                  )
+                })}
             </tbody>
           </table>
         </div>
