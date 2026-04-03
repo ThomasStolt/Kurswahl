@@ -171,3 +171,23 @@ def test_results_include_score_report(client):
     assert report["score_percent"] >= 0
     assert len(report["student_scores"]) == 2
     assert len(report["course_scores"]) == 8
+
+
+def test_optimize_assignments_returns_score_report(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.optimize.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.session.save", side_effect=fake_save), \
+         patch("app.routers.optimize.run_full_optimization", side_effect=_make_fake_optimization_result), \
+         patch("app.routers.optimize.run_assignment_optimization", side_effect=lambda students, courses: _make_fake_optimization_result(students, courses)[1]):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        client.post("/api/optimize")
+        response = client.post("/api/optimize/assignments")
+    assert response.status_code == 200
+    data = response.json()
+    assert "score_report" in data
+    assert data["score_report"]["score_percent"] >= 0

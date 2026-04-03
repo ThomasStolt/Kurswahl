@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app import session
 from app.optimizer import run_full_optimization, run_assignment_optimization
+from app.scorer import compute_score_report
 
 router = APIRouter(prefix="/api")
 
@@ -39,4 +40,5 @@ def optimize_assignments_only():
         raise HTTPException(status_code=422, detail=str(exc))
     data.assignments = assignments
     session.save(data)
-    return {"assignment_count": len(assignments)}
+    report = compute_score_report(data.assignments, data.courses)
+    return {"assignment_count": len(assignments), "score_report": report.model_dump()}
