@@ -41,7 +41,7 @@ class StudentScore(BaseModel):
     student_nr: int
     student_name: str
     score_total: int        # 0-16
-    avg_priority: float     # average achieved priority (1.0-8.0)
+    avg_priority: float     # average achieved priority (1.0-8.0), 0.0 if unassigned
 
 
 class CourseScore(BaseModel):

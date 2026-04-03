@@ -13,8 +13,7 @@ def _score_to_prio(score: int) -> str:
     return str(9 - score)
 
 
-def _summary_lines(assignments, courses):
-    report = compute_score_report(assignments, courses)
+def _summary_lines(report):
     return [
         [f"Zufriedenheit: {report.score_percent}% — {report.score_label}"],
         [report.score_description],
@@ -24,12 +23,12 @@ def _summary_lines(assignments, courses):
 
 
 def to_csv(assignments: list[Assignment], courses: list[Course]) -> bytes:
+    report = compute_score_report(assignments, courses)
     buf = io.StringIO()
     writer = csv.writer(buf, delimiter=";")
-    for row in _summary_lines(assignments, courses):
+    for row in _summary_lines(report):
         writer.writerow(row)
     writer.writerow(HEADERS)
-    report = compute_score_report(assignments, courses)
     score_map = {s.student_nr: s for s in report.student_scores}
     for a in sorted(assignments, key=lambda x: x.student_nr):
         ss = score_map.get(a.student_nr)
@@ -48,10 +47,10 @@ def to_excel(assignments: list[Assignment], courses: list[Course]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Zuteilung"
-    for row in _summary_lines(assignments, courses):
+    report = compute_score_report(assignments, courses)
+    for row in _summary_lines(report):
         ws.append(row)
     ws.append(HEADERS)
-    report = compute_score_report(assignments, courses)
     score_map = {s.student_nr: s for s in report.student_scores}
     for a in sorted(assignments, key=lambda x: x.student_nr):
         ss = score_map.get(a.student_nr)
