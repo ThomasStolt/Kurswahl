@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-04
+
+### Added
+
+- **Algorithmus-Erklärung auf der Upload-Seite** — Infokarte mit verständlicher Zusammenfassung der Optimierung und aufklappbarem technischem Detail (ILP-Methode, Zielfunktion, Nebenbedingungen); zugänglich mit `aria-expanded`/`aria-controls`
+
 ## [1.2.0] - 2026-04-03
 
 ### Added
@@ -75,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session I/O mocked to support read-only filesystem environments
 - `pytest.ini` with `pythonpath = backend .` for correct import resolution
 
+[1.3.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ThomasStolt/Kurswahl/releases/tag/v1.0.0

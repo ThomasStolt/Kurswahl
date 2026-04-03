@@ -13,6 +13,7 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 - Zufriedenheits-Score: globale, schüler- und kursbezogene Bewertung der Optimierungsergebnisse
 - Live-Score auf der Optimierungsseite — aktualisiert sich nach jedem Drag & Drop
 - Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx) mit Score-Zusammenfassung und Kursübersicht
+- Algorithmus-Erklärung auf der Upload-Seite mit aufklappbarem technischem Detail
 - Dark Mode (system-aware, persistiert) mit warm Amber-Akzent
 
 ## Rahmenbedingungen
