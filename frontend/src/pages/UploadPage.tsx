@@ -152,6 +152,8 @@ export default function UploadPage() {
 
         <button
           type="button"
+          aria-expanded={algoOpen}
+          aria-controls="algo-detail"
           onClick={() => setAlgoOpen(o => !o)}
           className="mt-3 flex items-center gap-1.5 text-xs text-accent hover:underline cursor-pointer"
         >
@@ -166,7 +168,7 @@ export default function UploadPage() {
         </button>
 
         {algoOpen && (
-          <div className="border-t border-border mt-3 pt-3 space-y-1.5">
+          <div id="algo-detail" className="border-t border-border mt-3 pt-3 space-y-1.5">
             <p className="text-xs text-t3"><span className="text-t2 font-medium">Methode:</span> Ganzzahlige lineare Optimierung (ILP) via PuLP/CBC-Solver</p>
             <p className="text-xs text-t3"><span className="text-t2 font-medium">Zielfunktion:</span> Maximiert die Gesamtzufriedenheit — Priorität 1 gibt 8 Punkte, Priorität 2 gibt 7, usw.</p>
             <p className="text-xs text-t3"><span className="text-t2 font-medium">Nebenbedingungen:</span> Genau 8 Kurse angeboten (4 pro HJ), jeder Schüler bekommt genau 1 Kurs pro HJ, Kurskapazitäten (min/max) werden eingehalten</p>
