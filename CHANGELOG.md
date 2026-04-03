@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-03
+
+### Added
+
+- **Zufriedenheits-Score** — mehrstufiges Zufriedenheits-Scoring-System mit globaler, schüler- und kursbezogener Bewertung
+  - **Globaler Score**: Prozentwert der erreichten Gesamtzufriedenheit mit textueller Einordnung (Exzellent / Gut / Akzeptabel / Kritisch)
+  - **Schüler-Score**: Gesamt-Score (0–16 Punkte) und durchschnittliche erreichte Priorität pro Schüler
+  - **Kurs-Score**: Durchschnittliche Priorität der zugewiesenen Schüler und Auslastung (Schüler/Max mit Fortschrittsbalken)
+- **Live-Score auf der Optimierungsseite** — nach jedem Drag & Drop wird der aktuelle Zufriedenheits-Score in Echtzeit angezeigt
+- **Score-Header auf der Ergebnisseite** — großer Prozentwert mit Ampelfarbe und beschreibender Einordnung
+- **Erweiterte Ergebnistabellen** — Schüler-Tab zeigt „Gesamt" und „Ø Prio" Spalten; Kurs-Tab zeigt Auslastungsbalken
+- **Score im Export** — CSV und Excel enthalten Zusammenfassungszeilen (Zufriedenheit, Score, Bewertung) sowie Gesamt-Score und Ø Priorität pro Schüler; Excel erhält ein zusätzliches Sheet „Kursübersicht" mit Auslastung und Ø Priorität pro Kurs
+- 10 neue Tests (7 Scorer-Unit-Tests, 3 API-Integrationstests), insgesamt 28 Tests
+
 ## [1.1.0] - 2026-04-01
 
 ### Added
@@ -61,5 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session I/O mocked to support read-only filesystem environments
 - `pytest.ini` with `pythonpath = backend .` for correct import resolution
 
+[1.2.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ThomasStolt/Kurswahl/releases/tag/v1.0.0

@@ -10,7 +10,9 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 - Kurspräferenzen pro Schüler editierbar: sortierbare Liste per Drag & Drop oder Pfeil-Buttons
 - Optimistische UI-Aktualisierungen mit automatischem Rollback bei Fehler
 - Ergebnisansicht nach Kurs und nach Schüler (mit Zufriedenheitsbewertung)
-- Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx)
+- Zufriedenheits-Score: globale, schüler- und kursbezogene Bewertung der Optimierungsergebnisse
+- Live-Score auf der Optimierungsseite — aktualisiert sich nach jedem Drag & Drop
+- Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx) mit Score-Zusammenfassung und Kursübersicht
 - Dark Mode (system-aware, persistiert) mit warm Amber-Akzent
 
 ## Rahmenbedingungen
@@ -37,8 +39,8 @@ Nr.;Name;Kurs1;Kurs2;...;Kurs8
 
 1. **Upload** — CSV-Datei hochladen, Validierungsergebnisse prüfen
 2. **Editor** — Namen anpassen; Kurspräferenzen per Drag & Drop neu sortieren
-3. **Optimierung** — ILP-Algorithmus starten, Ergebnis per Drag & Drop nachkorrigieren
-4. **Ergebnisse** — Zuteilungen einsehen und als CSV/Excel exportieren
+3. **Optimierung** — ILP-Algorithmus starten, Ergebnis per Drag & Drop nachkorrigieren, Live-Zufriedenheits-Score verfolgen
+4. **Ergebnisse** — Zuteilungen mit Zufriedenheitsbewertung einsehen und als CSV/Excel exportieren
 
 ## Tech Stack
 
@@ -59,6 +61,7 @@ Kurswahl/
 │   │   ├── session.py       # Atomares JSON-Session-Management
 │   │   ├── parser.py        # CSV-Parser mit Validierung
 │   │   ├── optimizer.py     # ILP-Optimierung mit PuLP/CBC
+│   │   ├── scorer.py        # Zufriedenheits-Score-Berechnung
 │   │   ├── exporter.py      # CSV- und Excel-Export
 │   │   └── routers/         # FastAPI-Router (upload, students, courses, optimize, results, export)
 │   ├── Dockerfile
@@ -75,6 +78,7 @@ Kurswahl/
 │   ├── conftest.py
 │   ├── test_parser.py
 │   ├── test_optimizer.py
+│   ├── test_scorer.py
 │   └── test_api.py
 ├── docker-compose.yml
 └── nginx.conf
