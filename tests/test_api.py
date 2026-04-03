@@ -173,6 +173,30 @@ def test_results_include_score_report(client):
     assert len(report["course_scores"]) == 8
 
 
+def test_export_csv_includes_scores(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.optimize.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.session.save", side_effect=fake_save), \
+         patch("app.routers.export.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.run_full_optimization", side_effect=_make_fake_optimization_result):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        client.post("/api/optimize")
+        response = client.get("/api/export/csv")
+    assert response.status_code == 200
+    content = response.content.decode("utf-8-sig")
+    lines = content.strip().split("\n")
+    # First lines should be summary
+    assert "Zufriedenheit" in lines[0]
+    # Header row should include score columns
+    header_line = next(l for l in lines if l.startswith("Nr."))
+    assert "Gesamt-Score" in header_line
+
+
 def test_optimize_assignments_returns_score_report(client):
     fake_load, fake_save = _make_mock_session()
     with patch("app.routers.upload.session.load", side_effect=fake_load), \

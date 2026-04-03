@@ -10,7 +10,7 @@ def export_csv():
     data = session.load()
     if not data.assignments:
         raise HTTPException(status_code=404, detail="Keine Ergebnisse vorhanden")
-    content = exporter.to_csv(data.assignments)
+    content = exporter.to_csv(data.assignments, data.courses)
     return Response(
         content=content,
         media_type="text/csv",
@@ -23,7 +23,7 @@ def export_excel():
     data = session.load()
     if not data.assignments:
         raise HTTPException(status_code=404, detail="Keine Ergebnisse vorhanden")
-    content = exporter.to_excel(data.assignments)
+    content = exporter.to_excel(data.assignments, data.courses)
     return Response(
         content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
