@@ -102,3 +102,72 @@ def test_get_courses_with_demand(client):
     kochen = next(c for c in courses if c["name"] == "Kochen")
     assert kochen["max_students"] == 16
     assert kochen["total_interested"] > 0
+
+
+def _make_fake_optimization_result(students, courses):
+    """Return fake (updated_courses, assignments) for the optimizer mock."""
+    from app.models import Course, Assignment
+    course_names = [
+        "Debating", "Kochen", "Psychologie", "Rhetorik",
+        "Podcast", "Theater", "Musik am Computer", "Schach",
+    ]
+    updated_courses = []
+    for i, c in enumerate(courses):
+        updated = c.model_copy()
+        if c.name in course_names:
+            updated.offered = True
+            updated.semester = 1 if course_names.index(c.name) < 4 else 2
+        else:
+            updated.offered = False
+            updated.semester = None
+        updated_courses.append(updated)
+    valid = [s for s in students if s.valid]
+    assignments = [
+        Assignment(
+            student_nr=valid[0].nr,
+            student_name=valid[0].name,
+            course_hj1="Debating",
+            course_hj2="Podcast",
+            score_hj1=7,
+            score_hj2=6,
+        ),
+        Assignment(
+            student_nr=valid[1].nr,
+            student_name=valid[1].name,
+            course_hj1="Kochen",
+            course_hj2="Theater",
+            score_hj1=8,
+            score_hj2=5,
+        ),
+    ]
+    return updated_courses, assignments
+
+
+def test_results_include_score_report(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.optimize.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.session.save", side_effect=fake_save), \
+         patch("app.routers.results.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.run_full_optimization", side_effect=_make_fake_optimization_result):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        client.post("/api/optimize")
+        response = client.get("/api/results")
+    assert response.status_code == 200
+    data = response.json()
+    assert "score_report" in data
+    report = data["score_report"]
+    assert "score_achieved" in report
+    assert "score_maximum" in report
+    assert "score_percent" in report
+    assert "score_label" in report
+    assert "score_description" in report
+    assert "student_scores" in report
+    assert "course_scores" in report
+    assert report["score_percent"] >= 0
+    assert len(report["student_scores"]) == 2
+    assert len(report["course_scores"]) == 8

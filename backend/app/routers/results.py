@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app import session
+from app.scorer import compute_score_report
 
 router = APIRouter(prefix="/api")
 
@@ -38,7 +39,10 @@ def get_results():
         c["avg_score"] = round(sum(scores) / len(scores), 2) if scores else 0.0
         c["count"] = len(c["students"])
 
+    report = compute_score_report(data.assignments, data.courses)
+
     return {
         "by_course": list(by_course.values()),
         "by_student": [a.model_dump() for a in data.assignments],
+        "score_report": report.model_dump(),
     }
