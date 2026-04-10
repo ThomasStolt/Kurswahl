@@ -1,7 +1,13 @@
+import sys
+import time
 from pulp import (
     LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus, value, PULP_CBC_CMD
 )
 from app.models import Student, Course, Assignment
+
+
+def _log(msg: str) -> None:
+    print(f"[OPTIMIZER] {msg}", file=sys.stderr, flush=True)
 
 
 def _build_score(students: list[Student], course_names: list[str]) -> dict:
@@ -21,15 +27,18 @@ def run_full_optimization(
     Volloptimierung: wählt 8 Kurse (4 pro HJ) und teilt Schüler zu.
     Gibt aktualisierte Kursliste und Zuteilungen zurück.
     """
+    _log(f"run_full_optimization: {len(students)} students, {len(courses)} courses")
     valid = [s for s in students if s.valid]
     course_names = [c.name for c in courses]
     max_cap = {c.name: c.max_students for c in courses}
     min_cap = {c.name: c.min_students for c in courses}
+    _log(f"building score matrix ({len(valid)} valid x {len(course_names)} courses)")
     score = _build_score(valid, course_names)
 
     prob = LpProblem("Kurswahl_Full", LpMaximize)
     S = range(len(valid))
 
+    _log("creating LP variables")
     offer  = {c: LpVariable(f"offer_{i}",  cat=LpBinary) for i, c in enumerate(course_names)}
     in_hj1 = {c: LpVariable(f"hj1_{i}",   cat=LpBinary) for i, c in enumerate(course_names)}
     in_hj2 = {c: LpVariable(f"hj2_{i}",   cat=LpBinary) for i, c in enumerate(course_names)}
@@ -37,6 +46,7 @@ def run_full_optimization(
           for s in S for i, c in enumerate(course_names)}
     a2 = {(s, c): LpVariable(f"a2_{s}_{i}", cat=LpBinary)
           for s in S for i, c in enumerate(course_names)}
+    _log(f"variables created: {len(offer)+len(in_hj1)+len(in_hj2)+len(a1)+len(a2)} total")
 
     # Zielfunktion
     prob += lpSum(score[(s, c)] * (a1[(s, c)] + a2[(s, c)])
@@ -65,7 +75,10 @@ def run_full_optimization(
             prob += a1[(s, c)] <= in_hj1[c]
             prob += a2[(s, c)] <= in_hj2[c]
 
-    status = prob.solve(PULP_CBC_CMD(msg=0))
+    _log("constraints built, calling CBC solver (timeLimit=120s)")
+    t0 = time.time()
+    status = prob.solve(PULP_CBC_CMD(msg=0, timeLimit=120))
+    _log(f"CBC returned after {time.time() - t0:.2f}s: status={LpStatus[status]}")
     if LpStatus[status] != "Optimal":
         raise ValueError(f"Optimierung fehlgeschlagen: {LpStatus[status]} — zu wenige Schüler oder ungültige Kapazitäten")
 
