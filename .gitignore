@@ -8,3 +8,4 @@ dist/
 /data/
 .superpowers/
 .worktrees/
+docker-compose.override.yml
