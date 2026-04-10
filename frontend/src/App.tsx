@@ -4,6 +4,7 @@ import UploadPage from './pages/UploadPage'
 import EditorPage from './pages/EditorPage'
 import OptimizePage from './pages/OptimizePage'
 import ResultsPage from './pages/ResultsPage'
+import ConstraintsPage from './pages/ConstraintsPage'
 
 const steps = [
   { path: '/upload',   label: 'Upload' },
@@ -33,6 +34,15 @@ function MoonIcon() {
   return (
     <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.5 10.5A7.5 7.5 0 1 1 9.5 2.5a5.5 5.5 0 0 0 8 8z" />
+    </svg>
+  )
+}
+
+function InfoIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="8" />
+      <path d="M10 13.5V9M10 6.5h.01" />
     </svg>
   )
 }
@@ -104,14 +114,30 @@ function NavBar({ dark, toggleDark }: { dark: boolean; toggleDark: () => void })
 
         <StepNav />
 
-        <button
-          onClick={toggleDark}
-          className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-t2
-            hover:text-accent hover:border-accent/40 transition-all duration-200 flex-shrink-0"
-          aria-label="Erscheinungsbild wechseln"
-        >
-          {dark ? <SunIcon /> : <MoonIcon />}
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <NavLink
+            to="/rahmenbedingungen"
+            title="Rahmenbedingungen"
+            aria-label="Rahmenbedingungen"
+            className={({ isActive }) =>
+              `w-8 h-8 rounded-lg border flex items-center justify-center transition-all duration-200
+              ${isActive
+                ? 'border-accent/40 text-accent bg-accent/10'
+                : 'border-border text-t2 hover:text-accent hover:border-accent/40'}`
+            }
+          >
+            <InfoIcon />
+          </NavLink>
+
+          <button
+            onClick={toggleDark}
+            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-t2
+              hover:text-accent hover:border-accent/40 transition-all duration-200"
+            aria-label="Erscheinungsbild wechseln"
+          >
+            {dark ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </div>
       </div>
     </header>
   )
@@ -134,11 +160,12 @@ export default function App() {
       <NavBar dark={dark} toggleDark={() => setDark(d => !d)} />
       <main className="max-w-6xl mx-auto px-6 py-8">
         <Routes>
-          <Route path="/"         element={<Navigate to="/upload" replace />} />
-          <Route path="/upload"   element={<UploadPage />} />
-          <Route path="/editor"   element={<EditorPage />} />
-          <Route path="/optimize" element={<OptimizePage />} />
-          <Route path="/results"  element={<ResultsPage />} />
+          <Route path="/"                  element={<Navigate to="/upload" replace />} />
+          <Route path="/upload"            element={<UploadPage />} />
+          <Route path="/editor"            element={<EditorPage />} />
+          <Route path="/optimize"          element={<OptimizePage />} />
+          <Route path="/results"           element={<ResultsPage />} />
+          <Route path="/rahmenbedingungen" element={<ConstraintsPage />} />
         </Routes>
       </main>
     </BrowserRouter>
