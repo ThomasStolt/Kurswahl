@@ -113,6 +113,7 @@ export default function OptimizePage() {
   const [reassigning, setReassigning] = useState(false)
   const [optimized, setOptimized] = useState(false)
   const [scoreReport, setScoreReport] = useState<ScoreReport | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
@@ -124,6 +125,7 @@ export default function OptimizePage() {
 
   const runOptimization = async () => {
     setOptimizing(true)
+    setError(null)
     try {
       await api.runFullOptimization()
       const updated = await api.getCourses()
@@ -133,6 +135,8 @@ export default function OptimizePage() {
         const results = await api.getResults()
         setScoreReport(results.score_report)
       } catch { /* score display is optional here */ }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unbekannter Fehler')
     } finally {
       setOptimizing(false)
     }
@@ -198,6 +202,15 @@ export default function OptimizePage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-err/[0.05] border border-err/20 rounded-xl flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-err/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-err text-xs font-bold">!</span>
+          </div>
+          <p className="text-err text-sm leading-relaxed">{error}</p>
+        </div>
+      )}
 
       {!optimized ? (
         <div className="flex flex-col items-center justify-center py-20 stagger-2">
