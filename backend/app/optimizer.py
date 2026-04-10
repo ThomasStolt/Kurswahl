@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from pulp import (
@@ -5,9 +6,16 @@ from pulp import (
 )
 from app.models import Student, Course, Assignment
 
+SOLVER_TIME_LIMIT = int(os.environ.get("KURSWAHL_SOLVER_TIME_LIMIT", "240"))
+SOLVER_THREADS = int(os.environ.get("KURSWAHL_SOLVER_THREADS", "4"))
+
 
 def _log(msg: str) -> None:
     print(f"[OPTIMIZER] {msg}", file=sys.stderr, flush=True)
+
+
+def _build_solver() -> PULP_CBC_CMD:
+    return PULP_CBC_CMD(msg=0, timeLimit=SOLVER_TIME_LIMIT, threads=SOLVER_THREADS)
 
 
 def _build_score(students: list[Student], course_names: list[str]) -> dict:
@@ -75,9 +83,9 @@ def run_full_optimization(
             prob += a1[(s, c)] <= in_hj1[c]
             prob += a2[(s, c)] <= in_hj2[c]
 
-    _log("constraints built, calling CBC solver (timeLimit=240s)")
+    _log(f"constraints built, calling CBC solver (timeLimit={SOLVER_TIME_LIMIT}s, threads={SOLVER_THREADS})")
     t0 = time.time()
-    status = prob.solve(PULP_CBC_CMD(msg=0, timeLimit=240))
+    status = prob.solve(_build_solver())
     _log(f"CBC returned after {time.time() - t0:.2f}s: status={LpStatus[status]}")
     if LpStatus[status] != "Optimal":
         raise ValueError(f"Optimierung fehlgeschlagen: {LpStatus[status]} — zu wenige Schüler oder ungültige Kapazitäten")
@@ -131,7 +139,7 @@ def run_assignment_optimization(
         prob += lpSum(a1[(s, c)] for c in hj1) == 1
         prob += lpSum(a2[(s, c)] for c in hj2) == 1
 
-    status = prob.solve(PULP_CBC_CMD(msg=0))
+    status = prob.solve(_build_solver())
     if LpStatus[status] != "Optimal":
         raise ValueError(f"Zuteilung fehlgeschlagen: {LpStatus[status]} — Kurskapazitäten überprüfen")
 
