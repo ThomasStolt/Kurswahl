@@ -75,9 +75,9 @@ def run_full_optimization(
             prob += a1[(s, c)] <= in_hj1[c]
             prob += a2[(s, c)] <= in_hj2[c]
 
-    _log("constraints built, calling CBC solver (timeLimit=120s)")
+    _log("constraints built, calling CBC solver (timeLimit=240s)")
     t0 = time.time()
-    status = prob.solve(PULP_CBC_CMD(msg=0, timeLimit=120))
+    status = prob.solve(PULP_CBC_CMD(msg=0, timeLimit=240))
     _log(f"CBC returned after {time.time() - t0:.2f}s: status={LpStatus[status]}")
     if LpStatus[status] != "Optimal":
         raise ValueError(f"Optimierung fehlgeschlagen: {LpStatus[status]} — zu wenige Schüler oder ungültige Kapazitäten")
