@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, closestCenter, useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
 import type { CourseStats, ScoreReport } from '../types'
+
+const COL_HJ1 = 'col-hj1'
+const COL_HJ2 = 'col-hj2'
+const COL_NONE = 'col-none'
 
 function CourseCard({ course }: { course: CourseStats }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -62,7 +66,8 @@ const COLUMNS = [
   },
 ] as const
 
-function Column({ col, courses }: { col: typeof COLUMNS[number]; courses: CourseStats[] }) {
+function Column({ col, columnId, courses }: { col: typeof COLUMNS[number]; columnId: string; courses: CourseStats[] }) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnId })
   return (
     <div className={`bg-surface border rounded-2xl overflow-hidden shadow-card ${col.border}`}>
       <div className={`${col.header} px-4 pt-4 pb-3 border-b border-border`}>
@@ -76,7 +81,10 @@ function Column({ col, courses }: { col: typeof COLUMNS[number]; courses: Course
           </span>
         </div>
       </div>
-      <div className="p-3">
+      <div
+        ref={setNodeRef}
+        className={`p-3 min-h-28 transition-colors duration-150 ${isOver ? 'bg-accent/[0.06]' : ''}`}
+      >
         <SortableContext items={courses.map(c => c.name)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 min-h-14">
             {courses.map(c => <CourseCard key={c.name} course={c} />)}
@@ -147,10 +155,25 @@ export default function OptimizePage() {
     if (!over || active.id === over.id) return
 
     const draggedName = active.id as string
-    const targetName  = over.id  as string
+    const overId = over.id as string
     const dragged = courses.find(c => c.name === draggedName)
-    const target  = courses.find(c => c.name === targetName)
-    if (!dragged || !target) return
+    if (!dragged) return
+
+    // If dropped on a column (not a card), redirect to the first card in that column.
+    // Swap semantics preserve the 4/4/rest distribution the optimizer expects.
+    let targetName = overId
+    if (overId === COL_HJ1 || overId === COL_HJ2 || overId === COL_NONE) {
+      const colCourses =
+        overId === COL_HJ1 ? hj1 :
+        overId === COL_HJ2 ? hj2 :
+        notOffered
+      if (colCourses.length === 0) return
+      if (colCourses.some(c => c.name === draggedName)) return
+      targetName = colCourses[0].name
+    }
+
+    const target = courses.find(c => c.name === targetName)
+    if (!target || target.name === dragged.name) return
 
     const previousCourses = courses
     const previousScore = scoreReport
@@ -276,9 +299,9 @@ export default function OptimizePage() {
           </p>
           <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-3 gap-4">
-              <Column col={COLUMNS[0]} courses={hj1} />
-              <Column col={COLUMNS[1]} courses={hj2} />
-              <Column col={COLUMNS[2]} courses={notOffered} />
+              <Column col={COLUMNS[0]} columnId={COL_HJ1}  courses={hj1} />
+              <Column col={COLUMNS[1]} columnId={COL_HJ2}  courses={hj2} />
+              <Column col={COLUMNS[2]} columnId={COL_NONE} courses={notOffered} />
             </div>
           </DndContext>
         </div>
