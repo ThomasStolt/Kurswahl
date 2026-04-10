@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DndContext, DragEndEvent, closestCenter, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
@@ -9,6 +9,22 @@ import type { CourseStats, ScoreReport } from '../types'
 const COL_HJ1 = 'col-hj1'
 const COL_HJ2 = 'col-hj2'
 const COL_NONE = 'col-none'
+
+function CourseCardBody({ course }: { course: CourseStats }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-medium text-t1 text-sm truncate">{course.name}</span>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-[11px] text-t3 bg-elevated px-2 py-0.5 rounded-full font-medium">
+          {course.total_interested}
+        </span>
+        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-t3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M2 5h12M2 8h12M2 11h12" />
+        </svg>
+      </div>
+    </div>
+  )
+}
 
 function CourseCard({ course }: { course: CourseStats }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -24,20 +40,21 @@ function CourseCard({ course }: { course: CourseStats }) {
       className={`bg-surface border rounded-xl px-3.5 py-2.5 cursor-grab active:cursor-grabbing select-none
         transition-all duration-150
         ${isDragging
-          ? 'border-accent/40 opacity-40 scale-95 shadow-glow'
+          ? 'border-dashed border-border opacity-30'
           : 'border-border hover:border-accent/30 hover:shadow-card-md'}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-t1 text-sm truncate">{course.name}</span>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] text-t3 bg-elevated px-2 py-0.5 rounded-full font-medium">
-            {course.total_interested}
-          </span>
-          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-t3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M2 5h12M2 8h12M2 11h12" />
-          </svg>
-        </div>
-      </div>
+      <CourseCardBody course={course} />
+    </div>
+  )
+}
+
+function CourseCardOverlay({ course }: { course: CourseStats }) {
+  return (
+    <div
+      className="bg-surface border border-accent/60 rounded-xl px-3.5 py-2.5 select-none
+        shadow-2xl shadow-accent/30 scale-105 rotate-1 cursor-grabbing"
+    >
+      <CourseCardBody course={course} />
     </div>
   )
 }
@@ -122,6 +139,7 @@ export default function OptimizePage() {
   const [optimized, setOptimized] = useState(false)
   const [scoreReport, setScoreReport] = useState<ScoreReport | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [activeCourse, setActiveCourse] = useState<CourseStats | null>(null)
 
   useEffect(() => {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
@@ -150,7 +168,13 @@ export default function OptimizePage() {
     }
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const c = courses.find(c => c.name === event.active.id)
+    if (c) setActiveCourse(c)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveCourse(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -305,12 +329,20 @@ export default function OptimizePage() {
           <p className="text-xs text-t3 mb-4">
             Kurse per Drag & Drop zwischen den Halbjahren oder in „Nicht angeboten" verschieben.
           </p>
-          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveCourse(null)}
+          >
             <div className="grid grid-cols-3 gap-4">
               <Column col={COLUMNS[0]} columnId={COL_HJ1}  courses={hj1} />
               <Column col={COLUMNS[1]} columnId={COL_HJ2}  courses={hj2} />
               <Column col={COLUMNS[2]} columnId={COL_NONE} courses={notOffered} />
             </div>
+            <DragOverlay dropAnimation={null}>
+              {activeCourse ? <CourseCardOverlay course={activeCourse} /> : null}
+            </DragOverlay>
           </DndContext>
         </div>
       )}
