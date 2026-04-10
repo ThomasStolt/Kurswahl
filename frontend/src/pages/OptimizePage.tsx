@@ -185,14 +185,22 @@ export default function OptimizePage() {
     setCourses(newCourses as CourseStats[])
 
     setReassigning(true)
+    setError(null)
     try {
-      await api.updateCourse(draggedName, { offered: target.offered  ?? false, semester: target.semester  ?? undefined })
-      await api.updateCourse(targetName,  { offered: dragged.offered,          semester: dragged.semester ?? undefined })
+      await api.updateCourse(draggedName, { offered: target.offered,  semester: target.semester  ?? undefined })
+      await api.updateCourse(targetName,  { offered: dragged.offered, semester: dragged.semester ?? undefined })
       const result = await api.runAssignmentOptimization()
       setScoreReport(result.score_report)
-    } catch {
+    } catch (e) {
       setCourses(previousCourses)
       setScoreReport(previousScore)
+      // Roll back the backend too — the two PATCHes already landed before the
+      // assignment solver rejected the new layout.
+      try {
+        await api.updateCourse(draggedName, { offered: dragged.offered, semester: dragged.semester ?? undefined })
+        await api.updateCourse(targetName,  { offered: target.offered,  semester: target.semester  ?? undefined })
+      } catch { /* best-effort rollback */ }
+      setError(e instanceof Error ? e.message : 'Tausch nicht möglich')
     } finally {
       setReassigning(false)
     }
