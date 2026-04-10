@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragStartEvent, DragOverEvent, DragOverlay, closestCenter, useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
@@ -27,7 +27,7 @@ function CourseCardBody({ course }: { course: CourseStats }) {
   )
 }
 
-function CourseCard({ course }: { course: CourseStats }) {
+function CourseCard({ course, isSwapTarget }: { course: CourseStats; isSwapTarget: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: course.name })
   const style = { transform: CSS.Transform.toString(transform), transition }
@@ -42,6 +42,8 @@ function CourseCard({ course }: { course: CourseStats }) {
         transition-all duration-150
         ${isDragging
           ? 'border-dashed border-border opacity-30'
+          : isSwapTarget
+          ? 'border-accent bg-accent/[0.10] ring-2 ring-accent/50 shadow-glow scale-[1.02]'
           : 'border-border hover:border-accent/30 hover:shadow-card-md'}`}
     >
       <CourseCardBody course={course} />
@@ -84,7 +86,7 @@ const COLUMNS = [
   },
 ] as const
 
-function Column({ col, columnId, courses }: { col: typeof COLUMNS[number]; columnId: string; courses: CourseStats[] }) {
+function Column({ col, columnId, courses, swapTargetName }: { col: typeof COLUMNS[number]; columnId: string; courses: CourseStats[]; swapTargetName: string | null }) {
   const { setNodeRef, isOver } = useDroppable({ id: columnId })
   return (
     <div className={`bg-surface border rounded-2xl overflow-hidden shadow-card ${col.border}`}>
@@ -105,7 +107,13 @@ function Column({ col, columnId, courses }: { col: typeof COLUMNS[number]; colum
       >
         <SortableContext items={courses.map(c => c.name)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2 min-h-14">
-            {courses.map(c => <CourseCard key={c.name} course={c} />)}
+            {courses.map(c => (
+              <CourseCard
+                key={c.name}
+                course={c}
+                isSwapTarget={c.name === swapTargetName}
+              />
+            ))}
           </div>
         </SortableContext>
       </div>
@@ -141,6 +149,7 @@ export default function OptimizePage() {
   const [scoreReport, setScoreReport] = useState<ScoreReport | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeCourse, setActiveCourse] = useState<CourseStats | null>(null)
+  const [swapTargetName, setSwapTargetName] = useState<string | null>(null)
 
   useEffect(() => {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
@@ -174,31 +183,45 @@ export default function OptimizePage() {
     if (c) setActiveCourse(c)
   }
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveCourse(null)
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-
-    const draggedName = active.id as string
-    const overId = over.id as string
-    const dragged = courses.find(c => c.name === draggedName)
-    if (!dragged) return
-
-    // If dropped on a column (not a card), redirect to the first card in that column.
-    // Swap semantics preserve the 4/4/rest distribution the optimizer expects.
-    let targetName = overId
+  const resolveSwapTarget = (draggedName: string, overId: string): string | null => {
     if (overId === COL_HJ1 || overId === COL_HJ2 || overId === COL_NONE) {
       const colCourses =
         overId === COL_HJ1 ? hj1 :
         overId === COL_HJ2 ? hj2 :
         notOffered
-      if (colCourses.length === 0) return
-      if (colCourses.some(c => c.name === draggedName)) return
-      targetName = colCourses[0].name
+      if (colCourses.length === 0) return null
+      if (colCourses.some(c => c.name === draggedName)) return null
+      return colCourses[0].name
     }
+    if (overId === draggedName) return null
+    return overId
+  }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+    if (!over) { setSwapTargetName(null); return }
+    setSwapTargetName(resolveSwapTarget(active.id as string, over.id as string))
+  }
+
+  const handleDragCancel = () => {
+    setActiveCourse(null)
+    setSwapTargetName(null)
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveCourse(null)
+    setSwapTargetName(null)
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const draggedName = active.id as string
+    const dragged = courses.find(c => c.name === draggedName)
+    if (!dragged) return
+
+    const targetName = resolveSwapTarget(draggedName, over.id as string)
+    if (!targetName) return
     const target = courses.find(c => c.name === targetName)
-    if (!target || target.name === dragged.name) return
+    if (!target) return
 
     const previousCourses = courses
     const previousScore = scoreReport
@@ -333,13 +356,14 @@ export default function OptimizePage() {
           <DndContext
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
-            onDragCancel={() => setActiveCourse(null)}
+            onDragCancel={handleDragCancel}
           >
             <div className="grid grid-cols-3 gap-4">
-              <Column col={COLUMNS[0]} columnId={COL_HJ1}  courses={hj1} />
-              <Column col={COLUMNS[1]} columnId={COL_HJ2}  courses={hj2} />
-              <Column col={COLUMNS[2]} columnId={COL_NONE} courses={notOffered} />
+              <Column col={COLUMNS[0]} columnId={COL_HJ1}  courses={hj1}        swapTargetName={swapTargetName} />
+              <Column col={COLUMNS[1]} columnId={COL_HJ2}  courses={hj2}        swapTargetName={swapTargetName} />
+              <Column col={COLUMNS[2]} columnId={COL_NONE} courses={notOffered} swapTargetName={swapTargetName} />
             </div>
             {createPortal(
               <DragOverlay dropAnimation={null}>
