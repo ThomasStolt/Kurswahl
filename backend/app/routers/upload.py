@@ -25,7 +25,7 @@ async def upload_csv(file: UploadFile = File(...)):
     courses = [
         Course(
             name=name,
-            max_students=COURSE_CAPS.get(name, 22),
+            max_students=COURSE_CAPS.get(name, 26),
         )
         for name in course_names
     ]

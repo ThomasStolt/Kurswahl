@@ -12,14 +12,14 @@ def _make_assignment(nr, name, c1, s1, c2, s2):
 
 def _make_courses():
     return [
-        Course(name="Bio", max_students=22, offered=True, semester=1),
-        Course(name="Chemie", max_students=22, offered=True, semester=1),
-        Course(name="Physik", max_students=22, offered=True, semester=1),
-        Course(name="Mathe", max_students=22, offered=True, semester=1),
-        Course(name="Kunst", max_students=22, offered=True, semester=2),
-        Course(name="Musik", max_students=22, offered=True, semester=2),
-        Course(name="Sport", max_students=22, offered=True, semester=2),
-        Course(name="Theater", max_students=22, offered=True, semester=2),
+        Course(name="Bio", max_students=26, offered=True, semester=1),
+        Course(name="Chemie", max_students=26, offered=True, semester=1),
+        Course(name="Physik", max_students=26, offered=True, semester=1),
+        Course(name="Mathe", max_students=26, offered=True, semester=1),
+        Course(name="Kunst", max_students=26, offered=True, semester=2),
+        Course(name="Musik", max_students=26, offered=True, semester=2),
+        Course(name="Sport", max_students=26, offered=True, semester=2),
+        Course(name="Theater", max_students=26, offered=True, semester=2),
         Course(name="Kochen", max_students=16, offered=False),
     ]
 
@@ -78,8 +78,8 @@ def test_course_scores():
     report = compute_score_report(assignments, courses)
     bio = next(c for c in report.course_scores if c.name == "Bio")
     assert bio.student_count == 2
-    assert bio.max_students == 22
-    assert bio.fill_rate == round(2 / 22, 4)
+    assert bio.max_students == 26
+    assert bio.fill_rate == round(2 / 26, 4)
     assert bio.avg_priority == 2.0  # (prio1 + prio3) / 2
 
 

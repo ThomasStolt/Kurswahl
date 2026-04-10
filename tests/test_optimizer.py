@@ -16,7 +16,7 @@ def make_students(n: int, course_names: list[str]) -> list[Student]:
 
 
 def make_courses(names: list[str]) -> list[Course]:
-    return [Course(name=n, max_students=16 if n == "Kochen" else 22) for n in names]
+    return [Course(name=n, max_students=16 if n == "Kochen" else 26) for n in names]
 
 
 COURSE_NAMES = [

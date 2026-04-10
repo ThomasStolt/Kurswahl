@@ -13,7 +13,7 @@ class Student(BaseModel):
 class Course(BaseModel):
     name: str
     min_students: int = 15
-    max_students: int = 22
+    max_students: int = 26
     offered: bool = False
     semester: Optional[int] = None  # 1 oder 2
 

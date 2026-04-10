@@ -19,7 +19,7 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 ## Rahmenbedingungen
 
 - 18 Kurs-Kandidaten → 8 werden angeboten (4 pro Halbjahr)
-- Kapazität: 15–22 Schüler pro Kurs (Kochen max. 16)
+- Kapazität: 15–26 Schüler pro Kurs (Kochen max. 16)
 - Schüler priorisieren 8 Wunschkurse (Priorität 1–8)
 
 ## CSV-Format

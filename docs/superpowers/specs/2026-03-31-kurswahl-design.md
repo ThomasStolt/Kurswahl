@@ -15,7 +15,7 @@ Eine Web-App für Lehrkräfte zur Verwaltung der Kurswahl. Der Admin lädt eine 
 
 - **Kurse:** 18 Kandidaten, davon werden 8 angeboten (4 pro Halbjahr)
 - **Schüler:** ~70–130 (je nach Beteiligung)
-- **Kapazität:** Min. 15 / Max. 22 SuS pro Kurs; Kochen max. 16
+- **Kapazität:** Min. 15 / Max. 26 SuS pro Kurs; Kochen max. 16
 - **Präferenzen:** Prioritäten 1–8 (1 = höchster Wunsch); 0 = kein Interesse
 - **Nutzerrolle:** Nur ein Admin / Lehrkraft (kein Login erforderlich)
 
@@ -49,7 +49,7 @@ errors: list[str]     # Beschreibung der Fehler (z.B. "Priorität 1 dreifach ver
 ```
 name: str
 min_students: int     # Default: 15
-max_students: int     # Default: 22 (Kochen: 16)
+max_students: int     # Default: 26 (Kochen: 16)
 offered: bool         # Wird dieser Kurs angeboten?
 semester: int | None  # 1 oder 2 (null = nicht angeboten)
 ```

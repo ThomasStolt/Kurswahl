@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-04-10
+
+### Changed
+
+- **Kurs-Maximalkapazität von 22 auf 26 erhöht** — betrifft `Course.max_students`-Default in `backend/app/models.py` sowie den Fallback in `backend/app/routers/upload.py`; Kochen bleibt bei max 16. Die Änderung wirkt auf alle nach dem Update hochgeladenen CSVs; bereits gespeicherte Session-States behalten ihren alten Wert, bis erneut hochgeladen wird. Tests (`test_scorer.py`, `test_optimizer.py`), README und Design-Spec wurden entsprechend nachgezogen.
+
 ## [1.3.1] - 2026-04-10
 
 ### Fixed
@@ -94,6 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session I/O mocked to support read-only filesystem environments
 - `pytest.ini` with `pythonpath = backend .` for correct import resolution
 
+[1.3.2]: https://github.com/ThomasStolt/Kurswahl/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/ThomasStolt/Kurswahl/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.1.0...v1.2.0
