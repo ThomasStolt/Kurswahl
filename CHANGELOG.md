@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-04-10
+
+### Fixed
+
+- **Optimierung hängt scheinbar** — auf langsamer Hardware (z. B. Raspberry Pi) brauchte der CBC-Solver länger als den nginx-Default-Timeout von 60 s; der Request wurde mit 504 gekappt, das Frontend verschluckte den Fehler und der Button sprang ohne Rückmeldung auf „Optimierung starten" zurück
+  - `proxy_read_timeout` / `proxy_send_timeout` in `nginx.conf` auf 300 s erhöht
+  - CBC-Solver `timeLimit=240s` als harte Obergrenze (weiterhin innerhalb des nginx-Timeouts)
+  - `OptimizePage` fängt jetzt Exceptions ab und zeigt eine rote Fehlermeldung, statt den Fehler stumm zu verschlucken
+
+### Added
+
+- Diagnose-Logs (`[OPTIMIZE]` / `[OPTIMIZER]`) rund um den Solver-Aufruf mit Laufzeitmessung, sichtbar in `docker compose logs -f backend`
+
 ## [1.3.0] - 2026-04-04
 
 ### Added
@@ -81,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session I/O mocked to support read-only filesystem environments
 - `pytest.ini` with `pythonpath = backend .` for correct import resolution
 
+[1.3.1]: https://github.com/ThomasStolt/Kurswahl/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ThomasStolt/Kurswahl/compare/v1.0.0...v1.1.0
