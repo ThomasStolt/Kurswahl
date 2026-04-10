@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, closestCenter, useDroppable } from '@dnd-kit/core'
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -340,9 +341,12 @@ export default function OptimizePage() {
               <Column col={COLUMNS[1]} columnId={COL_HJ2}  courses={hj2} />
               <Column col={COLUMNS[2]} columnId={COL_NONE} courses={notOffered} />
             </div>
-            <DragOverlay dropAnimation={null}>
-              {activeCourse ? <CourseCardOverlay course={activeCourse} /> : null}
-            </DragOverlay>
+            {createPortal(
+              <DragOverlay dropAnimation={null}>
+                {activeCourse ? <CourseCardOverlay course={activeCourse} /> : null}
+              </DragOverlay>,
+              document.body
+            )}
           </DndContext>
         </div>
       )}
