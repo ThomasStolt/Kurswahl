@@ -16,10 +16,10 @@ function CourseCardBody({ course }: { course: CourseStats }) {
     <div className="flex items-center justify-between gap-2">
       <span className="font-medium text-t1 text-sm truncate">{course.name}</span>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-[11px] text-t3 bg-elevated px-2 py-0.5 rounded-full font-medium">
+        <span className="text-[11px] text-t1 bg-elevated border border-border px-2 py-0.5 rounded-full font-semibold tabular-nums">
           {course.total_interested}
         </span>
-        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-t3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-t2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           <path d="M2 5h12M2 8h12M2 11h12" />
         </svg>
       </div>
