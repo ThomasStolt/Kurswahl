@@ -67,7 +67,7 @@ def test_course_capacity_respected():
         total = count_hj1 + count_hj2
         if total > 0:
             assert total <= course.max_students
-            assert total >= 15
+            assert total >= course.min_students
 
 
 def test_assignment_only_optimization():
