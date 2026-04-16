@@ -24,7 +24,9 @@ def optimize_full():
         raise HTTPException(status_code=400, detail="Keine Schüler geladen")
     try:
         _log("calling run_full_optimization...")
-        updated_courses, assignments = run_full_optimization(data.students, data.courses)
+        updated_courses, assignments = run_full_optimization(
+            data.students, data.courses, data.settings
+        )
         _log(f"optimization returned: {sum(1 for c in updated_courses if c.offered)} offered courses, {len(assignments)} assignments")
     except ValueError as exc:
         _log(f"ValueError from optimizer: {exc}")
@@ -49,12 +51,19 @@ def optimize_assignments_only():
     offered = [c for c in data.courses if c.offered]
     if not offered:
         raise HTTPException(status_code=400, detail="Keine Kurse als 'angeboten' markiert")
-    has_hj1 = any(c.semester == 1 for c in offered)
-    has_hj2 = any(c.semester == 2 for c in offered)
-    if not has_hj1 or not has_hj2:
-        raise HTTPException(status_code=400, detail="Angebotene Kurse müssen beiden Halbjahren zugeordnet sein")
+    hj1_count = sum(1 for c in offered if c.semester == 1)
+    hj2_count = sum(1 for c in offered if c.semester == 2)
+    if hj1_count != data.settings.hj1_count or hj2_count != data.settings.hj2_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Halbjahr-Verteilung stimmt nicht mit Einstellungen überein: "
+                f"aktuell {hj1_count}+{hj2_count}, erwartet "
+                f"{data.settings.hj1_count}+{data.settings.hj2_count}"
+            ),
+        )
     try:
-        assignments = run_assignment_optimization(data.students, data.courses)
+        assignments = run_assignment_optimization(data.students, data.courses, data.settings)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     data.assignments = assignments

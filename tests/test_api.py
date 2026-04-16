@@ -104,7 +104,7 @@ def test_get_courses_with_demand(client):
     assert kochen["total_interested"] > 0
 
 
-def _make_fake_optimization_result(students, courses):
+def _make_fake_optimization_result(students, courses, settings=None):
     """Return fake (updated_courses, assignments) for the optimizer mock."""
     from app.models import Course, Assignment
     course_names = [
@@ -204,7 +204,7 @@ def test_optimize_assignments_returns_score_report(client):
          patch("app.routers.optimize.session.load", side_effect=fake_load), \
          patch("app.routers.optimize.session.save", side_effect=fake_save), \
          patch("app.routers.optimize.run_full_optimization", side_effect=_make_fake_optimization_result), \
-         patch("app.routers.optimize.run_assignment_optimization", side_effect=lambda students, courses: _make_fake_optimization_result(students, courses)[1]):
+         patch("app.routers.optimize.run_assignment_optimization", side_effect=lambda students, courses, settings: _make_fake_optimization_result(students, courses)[1]):
         client.post(
             "/api/upload",
             files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
@@ -430,3 +430,29 @@ def test_put_settings_change_clears_assignments(client):
     assert state.courses[0].semester is None
     # Course min/max refreshed from new settings:
     assert state.courses[0].max_students == 22
+
+
+def test_optimize_assignments_rejects_count_mismatch(client):
+    """If the current offered distribution != settings.hj1/2_count, return 400."""
+    from app.models import SessionData, Student, Course, SessionSettings
+    state = SessionData(
+        students=[Student(nr=1, name="A", preferences={"X": 1, "Y": 2}, valid=True, errors=[])],
+        courses=[
+            Course(name="X", offered=True, semester=1, max_students=5, min_students=1),
+            Course(name="Y", offered=True, semester=2, max_students=5, min_students=1),
+        ],
+        settings=SessionSettings(hj1_count=2, hj2_count=2),  # requires 2+2, has 1+1
+    )
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.optimize.session.load", side_effect=fake_load), \
+         patch("app.routers.optimize.session.save", side_effect=fake_save):
+        response = client.post("/api/optimize/assignments")
+    assert response.status_code == 400
+    assert "Halbjahr" in response.json()["detail"] or "hj" in response.json()["detail"].lower()
