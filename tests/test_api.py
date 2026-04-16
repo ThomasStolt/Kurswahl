@@ -215,3 +215,39 @@ def test_optimize_assignments_returns_score_report(client):
     data = response.json()
     assert "score_report" in data
     assert data["score_report"]["score_percent"] >= 0
+
+
+def test_get_settings_empty_session_returns_defaults(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.get("/api/settings")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["settings"]["hj1_count"] == 4
+    assert body["settings"]["hj2_count"] == 4
+    assert body["settings"]["default_max"] == 22
+    assert body["settings"]["default_min"] == 1
+    assert body["settings"]["special_course"] is None
+    assert body["settings"]["special_max"] == 14
+    assert body["settings"]["special_min"] == 1
+    assert body["courses"] == []
+    assert body["assignments_exist"] is False
+
+
+def test_get_settings_after_upload_returns_course_list(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save), \
+         patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+        response = client.get("/api/settings")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["courses"]) > 0
+    assert "Kochen" in body["courses"]
+    assert body["assignments_exist"] is False

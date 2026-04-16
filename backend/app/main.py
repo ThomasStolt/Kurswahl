@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import upload, students, courses, optimize, results, export
+from app.routers import upload, students, courses, optimize, results, export, settings
 
 app = FastAPI(title="Kurswahl API")
 
@@ -17,6 +17,7 @@ app.include_router(courses.router)
 app.include_router(optimize.router)
 app.include_router(results.router)
 app.include_router(export.router)
+app.include_router(settings.router)
 
 
 @app.get("/api/health")
