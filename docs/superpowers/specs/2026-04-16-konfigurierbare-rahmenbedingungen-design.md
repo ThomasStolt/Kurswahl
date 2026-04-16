@@ -158,7 +158,7 @@ Ein `PUT` mit einem Body, der semantisch nichts ändert (identische Settings), i
 
 - `POST /api/upload`: Das hart kodierte `COURSE_CAPS: dict[str, int] = {"Kochen": 16}` in `upload.py` wird entfernt — neue `Course`-Objekte werden ohne explizites `max_students`/`min_students` erzeugt (Modell-Defaults greifen); anschließend wird `apply_settings_to_courses(new_courses, session.settings)` aufgerufen, was die korrekten Werte gemäß Settings setzt. Zusätzlich wird `settings.special_course` still auf `None` zurückgesetzt, falls der Name nicht (mehr) in der neuen Kursliste vorkommt. Das bestehende `data.assignments = []` bleibt erhalten (Upload impliziert immer einen Assignments-Reset).
 - `POST /api/optimize`: Übergibt `session.settings` an den Solver.
-- `POST /api/optimize/swap`: Die bestehende Prüfung „Ein Halbjahr darf nicht leer bleiben" wird verallgemeinert zu einer Post-Swap-Assertion, dass `len(hj1_offered) == settings.hj1_count` und `len(hj2_offered) == settings.hj2_count`. Wird die Invariante verletzt, `400`.
+- `POST /api/optimize/assignments`: Die bestehende Prüfung „Angebotene Kurse müssen beiden Halbjahren zugeordnet sein" wird verallgemeinert zu einer Post-Swap-Assertion, dass `len(hj1_offered) == settings.hj1_count` und `len(hj2_offered) == settings.hj2_count`. Wird die Invariante verletzt, `400`.
 
 ## Frontend
 
@@ -241,7 +241,7 @@ Erweitert in `tests/test_api.py`:
 - `PUT /api/settings` identischer Body (no-op) behält Assignments.
 - `PUT /api/settings` echte Änderung nach Optimierung löscht Assignments; Response `assignments_cleared: true`.
 - `POST /api/upload` mit CSV ohne bisherigen Sonderkurs → `special_course = None`.
-- `POST /api/optimize/swap` bricht mit `400` ab, wenn Invariante manipuliert wird.
+- `POST /api/optimize/assignments` bricht mit `400` ab, wenn Invariante manipuliert wird.
 
 Erweitert in `tests/test_optimizer.py`:
 
