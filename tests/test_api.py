@@ -251,3 +251,115 @@ def test_get_settings_after_upload_returns_course_list(client):
     assert len(body["courses"]) > 0
     assert "Kochen" in body["courses"]
     assert body["assignments_exist"] is False
+
+
+def test_put_settings_accepts_valid(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json={
+            "hj1_count": 3, "hj2_count": 5,
+            "default_max": 20, "default_min": 2,
+            "special_course": None, "special_max": 10, "special_min": 1,
+        })
+    assert response.status_code == 200
+    body = response.json()
+    assert body["settings"]["hj1_count"] == 3
+    assert body["settings"]["hj2_count"] == 5
+    assert body["assignments_cleared"] is False
+
+
+def test_put_settings_rejects_value_below_one(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json={
+            "hj1_count": 0, "hj2_count": 4,
+            "default_max": 20, "default_min": 1,
+            "special_course": None, "special_max": 10, "special_min": 1,
+        })
+    assert response.status_code == 422
+
+
+def test_put_settings_rejects_min_greater_than_max(client):
+    fake_load, fake_save = _make_mock_session()
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json={
+            "hj1_count": 4, "hj2_count": 4,
+            "default_max": 5, "default_min": 10,
+            "special_course": None, "special_max": 14, "special_min": 1,
+        })
+    assert response.status_code == 422
+
+
+def test_put_settings_rejects_unknown_special_course(client):
+    """special_course must be present in courses list if not None."""
+    fake_load, fake_save = _make_mock_session()
+    # session has no courses
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json={
+            "hj1_count": 4, "hj2_count": 4,
+            "default_max": 22, "default_min": 1,
+            "special_course": "Kochen", "special_max": 14, "special_min": 1,
+        })
+    assert response.status_code == 422
+
+
+def test_put_settings_noop_preserves_assignments(client):
+    """An identical PUT does not clear existing assignments."""
+    from app.models import SessionData, Student, Course, Assignment, SessionSettings
+    state = SessionData(
+        students=[Student(nr=1, name="A", preferences={}, valid=True, errors=[])],
+        courses=[Course(name="X", offered=True, semester=1)],
+        assignments=[Assignment(student_nr=1, student_name="A", course_hj1="X", course_hj2="X", score_hj1=8, score_hj2=8)],
+        settings=SessionSettings(),
+    )
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json=state.settings.model_dump())
+    assert response.status_code == 200
+    assert response.json()["assignments_cleared"] is False
+    assert len(state.assignments) == 1
+
+
+def test_put_settings_change_clears_assignments(client):
+    """A changed PUT clears assignments and resets offered/semester on courses."""
+    from app.models import SessionData, Student, Course, Assignment, SessionSettings
+    state = SessionData(
+        students=[Student(nr=1, name="A", preferences={}, valid=True, errors=[])],
+        courses=[Course(name="X", offered=True, semester=1, max_students=26)],
+        assignments=[Assignment(student_nr=1, student_name="A", course_hj1="X", course_hj2="X", score_hj1=8, score_hj2=8)],
+        settings=SessionSettings(),
+    )
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.settings.session.load", side_effect=fake_load), \
+         patch("app.routers.settings.session.save", side_effect=fake_save):
+        response = client.put("/api/settings", json={
+            "hj1_count": 3, "hj2_count": 5,  # changed
+            "default_max": 22, "default_min": 1,
+            "special_course": None, "special_max": 14, "special_min": 1,
+        })
+    assert response.status_code == 200
+    assert response.json()["assignments_cleared"] is True
+    assert state.assignments == []
+    assert state.courses[0].offered is False
+    assert state.courses[0].semester is None
+    # Course min/max refreshed from new settings:
+    assert state.courses[0].max_students == 22
