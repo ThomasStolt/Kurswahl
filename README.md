@@ -15,6 +15,7 @@ Web-App zur automatischen Kursauswahl und Schülerzuteilung. Ein Lehrer lädt ei
 - Export als CSV (UTF-8-SIG, Excel-kompatibel) und Excel (.xlsx) mit Score-Zusammenfassung und Kursübersicht
 - Algorithmus-Erklärung auf der Upload-Seite mit aufklappbarem technischem Detail
 - Dark Mode (system-aware, persistiert) mit warm Amber-Akzent
+- Konfigurierbare Rahmenbedingungen: Anzahl Kurse pro Halbjahr, Kurskapazitäten und Sonderkurs werden auf Seite 1 eingestellt und gelten für alle nachfolgenden Optimierungen
 
 ## Rahmenbedingungen
 

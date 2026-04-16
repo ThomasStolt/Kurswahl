@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-04-16
+
+### Breaking changes
+
+- **Rahmenbedingungen sind konfigurierbar.** Anzahl Kurse pro Halbjahr, Standard- und Sonderkurs-Kapazitäten werden jetzt auf Seite 1 eingestellt statt hart kodiert zu sein. Die Defaults sind: HJ1 = 4, HJ2 = 4, default_max = 22, default_min = 1, Sonderkurs = frei wählbar (Default „Kochen" falls vorhanden), special_max = 14, special_min = 1. Bestehende Sessions werden beim ersten Öffnen von Seite 1 auf die neuen Defaults zurückgesetzt — Assignments gehen dabei verloren und müssen neu optimiert werden.
+
+### Features
+
+- Neuer Endpoint `GET /api/settings` und `PUT /api/settings`.
+- UploadPage zeigt ein Formular für die Rahmenbedingungen. Der Auto-Redirect nach Upload entfällt; ein expliziter „Weiter zum Editor"-Button ersetzt ihn.
+- Sonderkurs-Dropdown mit Default „Kochen" (falls in CSV vorhanden) und „– kein Sonderkurs –"-Option.
+- Pre-Solve-Feasibility-Checks mit klaren Fehlermeldungen bei zu wenigen Kursen oder zu wenig Kapazität.
+
 ## [1.4.0] - 2026-04-10
 
 ### Added
