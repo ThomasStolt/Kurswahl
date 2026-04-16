@@ -59,15 +59,16 @@ export default function ConstraintsPage() {
         <div className="stagger-2">
           <Section
             title="Kurs-Kapazitäten"
-            intro="Jeder Kurs hat eine Unter- und Obergrenze für die Anzahl zugeteilter Schüler. Die Grenzen gelten nur, wenn der Kurs tatsächlich angeboten wird."
+            intro="Jeder Kurs hat eine Unter- und Obergrenze für die Anzahl zugeteilter Schüler. Die Werte werden auf Seite 1 eingestellt — hier die aktuellen Defaults beim ersten Start."
             rows={[
-              { label: 'Minimum pro Kurs', value: '15 Schüler', note: 'Wird ein Kurs angeboten, müssen mindestens 15 Schüler ihn besuchen — sonst würde er wirtschaftlich nicht tragbar sein.' },
-              { label: 'Maximum pro Kurs (Standard)', value: '26 Schüler' },
-              { label: 'Maximum Kochen', value: '16 Schüler', note: 'Sonderregel wegen der begrenzten Arbeitsplätze in der Schulküche.' },
+              { label: 'Minimum pro Kurs (Default)', value: '1 Schüler', note: 'Auf Seite 1 konfigurierbar. Das Minimum greift nur, wenn der Kurs angeboten wird.' },
+              { label: 'Maximum pro Kurs (Default)', value: '22 Schüler', note: 'Auf Seite 1 konfigurierbar.' },
+              { label: 'Sonderkurs-Auswahl', value: 'frei wählbar', note: 'Auf Seite 1 ein beliebiger Kurs aus der CSV auswählbar (Default: Kochen, falls vorhanden).' },
+              { label: 'Maximum Sonderkurs (Default)', value: '14 Schüler', note: 'Auf Seite 1 konfigurierbar.' },
             ]}
             footer={
               <>
-                <strong className="text-t2">Konsequenz:</strong> Mit 4 Kursen pro Halbjahr liegt die Gesamtkapazität eines Halbjahres zwischen 60 (4 × 15) und 104 (4 × 26). Landet Kochen in einem Halbjahr, sinkt die Obergrenze auf 94 (3 × 26 + 16). Für alle typischen Jahrgangsgrößen bis ca. 100 Schüler bleibt der Solver damit lösbar.
+                <strong className="text-t2">Beispiel:</strong> Mit den Defaults und 4 Kursen pro Halbjahr liegt die Gesamtkapazität eines Halbjahres zwischen 4 (4 × 1) und 88 (4 × 22). Wird einer der Kurse pro Halbjahr der Sonderkurs, sinkt die Obergrenze auf 80 (3 × 22 + 14).
               </>
             }
           />
@@ -76,10 +77,10 @@ export default function ConstraintsPage() {
         <div className="stagger-3">
           <Section
             title={'Volloptimierung (Button „Optimierung starten")'}
-            intro="Der Solver wählt automatisch, welche Kurse aus den bis zu 18 Kandidaten angeboten werden und teilt jedem Schüler je einen Kurs pro Halbjahr zu."
+            intro="Der Solver wählt automatisch, welche Kurse aus den Kandidaten angeboten werden und teilt jedem Schüler je einen Kurs pro Halbjahr zu."
             rows={[
-              { label: 'Anzahl angebotener Kurse', value: 'exakt 8', note: 'Aus allen Kandidaten werden die 8 gewählt, die die Gesamtzufriedenheit maximieren.' },
-              { label: 'Kurse pro Halbjahr', value: '4 + 4', note: 'Jeweils genau 4 in Halbjahr 1 und 4 in Halbjahr 2.' },
+              { label: 'Anzahl angebotener Kurse', value: 'HJ1 + HJ2', note: 'Die Gesamtsumme entspricht den auf Seite 1 eingestellten Werten für „Kurse HJ1" und „Kurse HJ2".' },
+              { label: 'Verteilung pro Halbjahr', value: 'gemäß Einstellung', note: 'Auf Seite 1 für HJ1 und HJ2 unabhängig einstellbar (min. 1 pro Halbjahr, Default 4+4).' },
               { label: 'Kurse in beiden Halbjahren', value: 'nicht möglich', note: 'Ein Kurs gehört entweder zu HJ1, zu HJ2 oder wird nicht angeboten.' },
               { label: 'Zuteilungen pro Schüler', value: '1 Kurs pro HJ', note: 'Jeder gültige Schüler bekommt genau einen Kurs pro Halbjahr — keine Mehrfachbelegung, keine Lücken.' },
               { label: 'Nur angebotene Kurse zuteilbar', value: 'garantiert', note: 'Ein Schüler kann nie einem Kurs zugeteilt werden, der nicht ausgewählt wurde.' },
