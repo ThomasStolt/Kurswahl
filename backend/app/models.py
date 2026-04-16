@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
@@ -16,6 +16,23 @@ class Course(BaseModel):
     max_students: int = 26
     offered: bool = False
     semester: Optional[int] = None  # 1 oder 2
+
+
+class SessionSettings(BaseModel):
+    hj1_count: int = 4
+    hj2_count: int = 4
+    default_max: int = 22
+    default_min: int = 1
+    special_course: Optional[str] = None
+    special_max: int = 14
+    special_min: int = 1
+
+    @field_validator("special_course", mode="before")
+    @classmethod
+    def _empty_to_none(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
 
 
 class CourseStats(BaseModel):
@@ -67,6 +84,7 @@ class SessionData(BaseModel):
     students: list[Student] = []
     courses: list[Course] = []
     assignments: list[Assignment] = []
+    settings: SessionSettings = Field(default_factory=SessionSettings)
 
 
 class StudentUpdate(BaseModel):
