@@ -72,3 +72,24 @@ export interface ResultsData {
   by_student: Assignment[]
   score_report: ScoreReport
 }
+
+export interface SessionSettings {
+  hj1_count: number
+  hj2_count: number
+  default_max: number
+  default_min: number
+  special_course: string | null
+  special_max: number
+  special_min: number
+}
+
+export interface SettingsResponse {
+  settings: SessionSettings
+  courses: string[]
+  assignments_exist: boolean
+}
+
+export interface SettingsUpdateResponse {
+  settings: SessionSettings
+  assignments_cleared: boolean
+}

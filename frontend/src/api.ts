@@ -1,4 +1,7 @@
-import type { Student, Course, CourseStats, UploadResult, ResultsData, ScoreReport } from './types'
+import type {
+  Student, Course, CourseStats, UploadResult, ResultsData, ScoreReport,
+  SessionSettings, SettingsResponse, SettingsUpdateResponse,
+} from './types'
 
 const BASE = '/api'
 
@@ -46,4 +49,13 @@ export const api = {
 
   exportCsv: () => window.open(`${BASE}/export/csv`, '_blank'),
   exportExcel: () => window.open(`${BASE}/export/excel`, '_blank'),
+
+  getSettings: (): Promise<SettingsResponse> => request('/settings'),
+
+  updateSettings: (settings: SessionSettings): Promise<SettingsUpdateResponse> =>
+    request('/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    }),
 }
