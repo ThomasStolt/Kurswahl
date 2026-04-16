@@ -100,7 +100,7 @@ def test_get_courses_with_demand(client):
     courses = response.json()
     assert len(courses) == 18
     kochen = next(c for c in courses if c["name"] == "Kochen")
-    assert kochen["max_students"] == 16
+    assert kochen["max_students"] == 22  # default_max from SessionSettings default
     assert kochen["total_interested"] > 0
 
 
@@ -330,6 +330,73 @@ def test_put_settings_noop_preserves_assignments(client):
     assert response.status_code == 200
     assert response.json()["assignments_cleared"] is False
     assert len(state.assignments) == 1
+
+
+def test_upload_applies_settings_to_new_courses(client):
+    """Uploaded courses should have min/max from current settings, not hardcoded 26/16."""
+    from app.models import SessionData, SessionSettings
+    state = SessionData(settings=SessionSettings(default_max=30, default_min=3, special_course=None))
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save):
+        response = client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+    assert response.status_code == 200
+    assert all(c.max_students == 30 for c in state.courses)
+    assert all(c.min_students == 3 for c in state.courses)
+
+
+def test_upload_clears_special_course_if_not_in_new_csv(client):
+    """If settings.special_course isn't in the uploaded CSV, reset to None."""
+    from app.models import SessionData, SessionSettings
+    state = SessionData(settings=SessionSettings(special_course="NichtVorhanden"))
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+    assert state.settings.special_course is None
+
+
+def test_upload_keeps_special_course_if_still_present(client):
+    """If settings.special_course IS in the new CSV, keep it."""
+    from app.models import SessionData, SessionSettings
+    state = SessionData(settings=SessionSettings(special_course="Kochen", special_max=14))
+
+    def fake_load():
+        return state
+
+    def fake_save(data):
+        nonlocal state
+        state = data
+
+    with patch("app.routers.upload.session.load", side_effect=fake_load), \
+         patch("app.routers.upload.session.save", side_effect=fake_save):
+        client.post(
+            "/api/upload",
+            files={"file": ("test.csv", io.BytesIO(VALID_CSV.encode()), "text/csv")},
+        )
+    assert state.settings.special_course == "Kochen"
+    kochen = next(c for c in state.courses if c.name == "Kochen")
+    assert kochen.max_students == 14
 
 
 def test_put_settings_change_clears_assignments(client):

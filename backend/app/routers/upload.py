@@ -1,10 +1,9 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.models import Course
 from app import session, parser
+from app.settings_util import apply_settings_to_courses
 
 router = APIRouter(prefix="/api")
-
-COURSE_CAPS: dict[str, int] = {"Kochen": 16}
 
 
 @router.post("/upload")
@@ -22,15 +21,15 @@ async def upload_csv(file: UploadFile = File(...)):
     except Exception as exc:
         raise HTTPException(status_code=422, detail=f"CSV konnte nicht verarbeitet werden: {exc}")
 
-    courses = [
-        Course(
-            name=name,
-            max_students=COURSE_CAPS.get(name, 26),
-        )
-        for name in course_names
-    ]
+    courses = [Course(name=name) for name in course_names]
 
     data = session.load()
+    # Reset special_course if it no longer appears in the CSV
+    if data.settings.special_course is not None and data.settings.special_course not in course_names:
+        data.settings.special_course = None
+    # Apply current settings to the fresh course list (sets min/max per course)
+    apply_settings_to_courses(courses, data.settings)
+
     data.students = students
     data.courses = courses
     data.assignments = []
