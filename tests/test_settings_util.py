@@ -1,4 +1,5 @@
-from app.models import SessionSettings, SessionData
+from app.models import SessionSettings, SessionData, Course
+from app.settings_util import apply_settings_to_courses
 
 
 def test_session_settings_defaults():
@@ -29,10 +30,6 @@ def test_session_settings_special_course_empty_string_normalized():
     """Empty string for special_course is normalized to None."""
     s = SessionSettings(special_course="")
     assert s.special_course is None
-
-
-from app.models import Course
-from app.settings_util import apply_settings_to_courses
 
 
 def _courses(names):
@@ -76,3 +73,5 @@ def test_apply_is_idempotent():
     apply_settings_to_courses(cs, s)
     assert cs[0].max_students == 22
     assert cs[1].max_students == 14
+    assert cs[0].min_students == s.default_min
+    assert cs[1].min_students == s.special_min
