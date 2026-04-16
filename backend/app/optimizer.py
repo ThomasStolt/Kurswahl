@@ -4,7 +4,7 @@ import time
 from pulp import (
     LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus, value, PULP_CBC_CMD
 )
-from app.models import Student, Course, Assignment
+from app.models import Student, Course, Assignment, SessionSettings
 
 SOLVER_TIME_LIMIT = int(os.environ.get("KURSWAHL_SOLVER_TIME_LIMIT", "240"))
 SOLVER_THREADS = int(os.environ.get("KURSWAHL_SOLVER_THREADS", "4"))
@@ -29,13 +29,13 @@ def _build_score(students: list[Student], course_names: list[str]) -> dict:
 
 
 def run_full_optimization(
-    students: list[Student], courses: list[Course]
+    students: list[Student], courses: list[Course], settings: SessionSettings
 ) -> tuple[list[Course], list[Assignment]]:
     """
-    Volloptimierung: wählt 8 Kurse (4 pro HJ) und teilt Schüler zu.
-    Gibt aktualisierte Kursliste und Zuteilungen zurück.
+    Volloptimierung: wählt Kurse gemäß settings.hj{1,2}_count und teilt Schüler zu.
     """
-    _log(f"run_full_optimization: {len(students)} students, {len(courses)} courses")
+    _log(f"run_full_optimization: {len(students)} students, {len(courses)} courses, "
+         f"hj1={settings.hj1_count}, hj2={settings.hj2_count}")
     valid = [s for s in students if s.valid]
     course_names = [c.name for c in courses]
     max_cap = {c.name: c.max_students for c in courses}
@@ -60,9 +60,9 @@ def run_full_optimization(
     prob += lpSum(score[(s, c)] * (a1[(s, c)] + a2[(s, c)])
                   for s in S for c in course_names)
 
-    # Kurs-Constraints
-    prob += lpSum(offer[c] for c in course_names) == 8
-    prob += lpSum(in_hj1[c] for c in course_names) == 4
+    # Kurs-Constraints (konfigurierbar)
+    prob += lpSum(in_hj1[c] for c in course_names) == settings.hj1_count
+    prob += lpSum(in_hj2[c] for c in course_names) == settings.hj2_count
     for c in course_names:
         prob += in_hj1[c] + in_hj2[c] == offer[c]
 
@@ -106,10 +106,11 @@ def run_full_optimization(
 
 
 def run_assignment_optimization(
-    students: list[Student], courses: list[Course]
+    students: list[Student], courses: list[Course], settings: SessionSettings
 ) -> list[Assignment]:
     """
     Nur Schülerzuteilung neu berechnen — Kurs/HJ-Konfiguration ist fix.
+    settings wird aktuell nur für API-Konsistenz übergeben.
     """
     valid = [s for s in students if s.valid]
     hj1 = [c.name for c in courses if c.offered and c.semester == 1]

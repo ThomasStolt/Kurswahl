@@ -1,5 +1,6 @@
 from app.optimizer import run_full_optimization, run_assignment_optimization
-from app.models import Student, Course, Assignment
+from app.models import Student, Course, Assignment, SessionSettings
+from app.settings_util import apply_settings_to_courses
 
 
 def make_students(n: int, course_names: list[str]) -> list[Student]:
@@ -19,6 +20,12 @@ def make_courses(names: list[str]) -> list[Course]:
     return [Course(name=n, max_students=16 if n == "Kochen" else 26) for n in names]
 
 
+def make_courses_with_settings(names: list[str], settings: SessionSettings) -> list[Course]:
+    cs = [Course(name=n) for n in names]
+    apply_settings_to_courses(cs, settings)
+    return cs
+
+
 COURSE_NAMES = [
     "Body Percussion", "Debating", "Girls' Empowerment", "Häkeln",
     "History Hunters", "Improvisation", "Just Relax", "Kochen",
@@ -30,7 +37,8 @@ COURSE_NAMES = [
 def test_full_optimization_selects_8_courses():
     students = make_students(60, COURSE_NAMES)
     courses = make_courses(COURSE_NAMES)
-    updated_courses, assignments = run_full_optimization(students, courses)
+    settings = SessionSettings()
+    updated_courses, assignments = run_full_optimization(students, courses, settings)
     offered = [c for c in updated_courses if c.offered]
     assert len(offered) == 8
 
@@ -38,7 +46,8 @@ def test_full_optimization_selects_8_courses():
 def test_full_optimization_4_per_semester():
     students = make_students(60, COURSE_NAMES)
     courses = make_courses(COURSE_NAMES)
-    updated_courses, _ = run_full_optimization(students, courses)
+    settings = SessionSettings()
+    updated_courses, _ = run_full_optimization(students, courses, settings)
     hj1 = [c for c in updated_courses if c.semester == 1]
     hj2 = [c for c in updated_courses if c.semester == 2]
     assert len(hj1) == 4
@@ -48,7 +57,8 @@ def test_full_optimization_4_per_semester():
 def test_each_student_gets_one_course_per_semester():
     students = make_students(60, COURSE_NAMES)
     courses = make_courses(COURSE_NAMES)
-    _, assignments = run_full_optimization(students, courses)
+    settings = SessionSettings()
+    _, assignments = run_full_optimization(students, courses, settings)
     assert len(assignments) == 60
     for a in assignments:
         assert a.course_hj1 != ""
@@ -58,7 +68,8 @@ def test_each_student_gets_one_course_per_semester():
 def test_course_capacity_respected():
     students = make_students(60, COURSE_NAMES)
     courses = make_courses(COURSE_NAMES)
-    updated_courses, assignments = run_full_optimization(students, courses)
+    settings = SessionSettings()
+    updated_courses, assignments = run_full_optimization(students, courses, settings)
     for course in updated_courses:
         if not course.offered:
             continue
@@ -81,5 +92,42 @@ def test_assignment_only_optimization():
     courses[5].offered = True; courses[5].semester = 2
     courses[6].offered = True; courses[6].semester = 2
     courses[7].offered = True; courses[7].semester = 2
-    assignments = run_assignment_optimization(students, courses)
+    settings = SessionSettings()
+    assignments = run_assignment_optimization(students, courses, settings)
     assert len(assignments) == 60
+
+
+def test_full_optimization_configurable_3_plus_5():
+    settings = SessionSettings(hj1_count=3, hj2_count=5, default_max=22, default_min=1)
+    students = make_students(60, COURSE_NAMES)
+    courses = make_courses_with_settings(COURSE_NAMES, settings)
+    updated, _ = run_full_optimization(students, courses, settings)
+    hj1 = [c for c in updated if c.semester == 1]
+    hj2 = [c for c in updated if c.semester == 2]
+    assert len(hj1) == 3
+    assert len(hj2) == 5
+
+
+def test_full_optimization_configurable_1_plus_1():
+    settings = SessionSettings(hj1_count=1, hj2_count=1, default_max=80, default_min=1)
+    students = make_students(60, COURSE_NAMES)
+    courses = make_courses_with_settings(COURSE_NAMES, settings)
+    updated, _ = run_full_optimization(students, courses, settings)
+    offered = [c for c in updated if c.offered]
+    assert len(offered) == 2
+    assert sum(1 for c in offered if c.semester == 1) == 1
+    assert sum(1 for c in offered if c.semester == 2) == 1
+
+
+def test_full_optimization_special_course_gets_special_max():
+    """When a special course is offered, its max_students reflects special_max."""
+    settings = SessionSettings(
+        hj1_count=4, hj2_count=4,
+        default_max=30, default_min=1,
+        special_course="Kochen", special_max=5, special_min=1,
+    )
+    students = make_students(60, COURSE_NAMES)
+    courses = make_courses_with_settings(COURSE_NAMES, settings)
+    updated, _ = run_full_optimization(students, courses, settings)
+    kochen = next(c for c in updated if c.name == "Kochen")
+    assert kochen.max_students == 5
