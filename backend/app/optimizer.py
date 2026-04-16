@@ -43,6 +43,20 @@ def run_full_optimization(
     _log(f"building score matrix ({len(valid)} valid x {len(course_names)} courses)")
     score = _build_score(valid, course_names)
 
+    # Pre-solve feasibility checks with clear error messages
+    total_courses_needed = settings.hj1_count + settings.hj2_count
+    if total_courses_needed > len(course_names):
+        raise ValueError(
+            f"Nicht genug Kurse: Die CSV enthält {len(course_names)} Kurse, "
+            f"aber {settings.hj1_count}+{settings.hj2_count}={total_courses_needed} sollen angeboten werden."
+        )
+    max_cap_any = max(settings.default_max, settings.special_max)
+    max_capacity = total_courses_needed * max_cap_any
+    if max_capacity < len(valid):
+        raise ValueError(
+            f"Nicht genug Plätze: maximal {max_capacity} Plätze für {len(valid)} Schüler."
+        )
+
     prob = LpProblem("Kurswahl_Full", LpMaximize)
     S = range(len(valid))
 

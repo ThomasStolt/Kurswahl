@@ -131,3 +131,28 @@ def test_full_optimization_special_course_gets_special_max():
     updated, _ = run_full_optimization(students, courses, settings)
     kochen = next(c for c in updated if c.name == "Kochen")
     assert kochen.max_students == 5
+
+
+import pytest
+
+
+def test_full_optimization_raises_when_not_enough_courses():
+    """hj1+hj2 > number of courses should raise a clear ValueError."""
+    settings = SessionSettings(hj1_count=5, hj2_count=5)
+    students = make_students(20, COURSE_NAMES[:4])
+    courses = make_courses_with_settings(COURSE_NAMES[:4], settings)
+    with pytest.raises(ValueError, match="Nicht genug Kurse"):
+        run_full_optimization(students, courses, settings)
+
+
+def test_full_optimization_raises_when_not_enough_capacity():
+    """(hj1+hj2) * max(default_max, special_max) < n_students should raise."""
+    settings = SessionSettings(
+        hj1_count=2, hj2_count=2, default_max=5, default_min=1,
+        special_course=None, special_max=5, special_min=1,
+    )
+    # 2+2 courses * 5 max = 20 seats; 30 students → infeasible
+    students = make_students(30, COURSE_NAMES)
+    courses = make_courses_with_settings(COURSE_NAMES, settings)
+    with pytest.raises(ValueError, match="Nicht genug Plätze"):
+        run_full_optimization(students, courses, settings)
