@@ -5,7 +5,7 @@ import { DndContext, DragEndEvent, DragStartEvent, DragOverEvent, DragOverlay, c
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { api } from '../api'
-import type { CourseStats, ScoreReport } from '../types'
+import type { CourseStats, ScoreReport, SessionSettings } from '../types'
 
 const COL_HJ1 = 'col-hj1'
 const COL_HJ2 = 'col-hj2'
@@ -150,9 +150,11 @@ export default function OptimizePage() {
   const [error, setError] = useState<string | null>(null)
   const [activeCourse, setActiveCourse] = useState<CourseStats | null>(null)
   const [swapTargetName, setSwapTargetName] = useState<string | null>(null)
+  const [settings, setSettings] = useState<SessionSettings | null>(null)
 
   useEffect(() => {
     api.getCourses().then(setCourses).finally(() => setLoading(false))
+    api.getSettings().then(res => setSettings(res.settings))
   }, [])
 
   const hj1        = courses.filter(c =>  c.offered && c.semester === 1)
@@ -302,8 +304,8 @@ export default function OptimizePage() {
           </div>
           <p className="text-t2 text-center max-w-sm mb-8 leading-relaxed text-sm">
             Der Algorithmus wählt automatisch die{' '}
-            <strong className="text-t1 font-semibold">8 besten Kurse</strong>{' '}
-            aus und teilt die Schüler optimal zu — maximale Zufriedenheit durch{' '}
+            <strong className="text-t1 font-semibold">{settings ? settings.hj1_count + settings.hj2_count : '…'} besten Kurse</strong>{' '}
+            ({settings ? `${settings.hj1_count} in HJ1, ${settings.hj2_count} in HJ2` : '…'}) aus und teilt die Schüler optimal zu — maximale Zufriedenheit durch{' '}
             <em className="not-italic text-accent">Integer Linear Programming</em>.
           </p>
           <button
