@@ -19,9 +19,9 @@ def optimize_full():
     _log(f"session loaded: {len(data.students)} students, {len(data.courses)} courses")
     valid = [s for s in data.students if s.valid]
     _log(f"valid students: {len(valid)}")
-    if not data.students:
-        _log("ERROR: no students loaded")
-        raise HTTPException(status_code=400, detail="Keine Schüler geladen")
+    if not valid:
+        _log("ERROR: no valid students loaded")
+        raise HTTPException(status_code=400, detail="Keine gültigen Schüler geladen")
     try:
         _log("calling run_full_optimization...")
         updated_courses, assignments = run_full_optimization(

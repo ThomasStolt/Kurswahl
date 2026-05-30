@@ -1,16 +1,19 @@
 import json
+import logging
 import os
 from pathlib import Path
 from app.models import SessionData
 
 SESSION_FILE = Path("/data/session.json")
+_log = logging.getLogger(__name__)
 
 
 def load() -> SessionData:
     if SESSION_FILE.exists():
         try:
             return SessionData.model_validate_json(SESSION_FILE.read_text())
-        except Exception:
+        except Exception as exc:
+            _log.error("Corrupt session file, starting fresh: %s", exc)
             return SessionData()
     return SessionData()
 

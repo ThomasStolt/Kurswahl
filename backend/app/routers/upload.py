@@ -18,8 +18,8 @@ async def upload_csv(file: UploadFile = File(...)):
 
     try:
         students, course_names = parser.parse_csv(content)
-    except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"CSV konnte nicht verarbeitet werden: {exc}")
+    except Exception:
+        raise HTTPException(status_code=422, detail="CSV konnte nicht verarbeitet werden")
 
     courses = [Course(name=name) for name in course_names]
 

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] — 2026-05-30
+
+### Fixed
+- **Optimierung mit nur ungültigen Schülern** — `POST /api/optimize` prüft jetzt auf gültige Schüler (`valid=True`) statt auf bloße Existenz; ein Upload mit ausschließlich fehlerhaften CSV-Zeilen liefert nun eine klare 400-Fehlermeldung statt einen internen Fehler.
+- **Session-Korruption sichtbar** — `session.load()` loggt jetzt den Fehler nach stderr, bevor es eine leere Session zurückgibt; bisher waren Korruptionen stille Datenverluste.
+- **Parser-Fehlermeldung nicht nach außen** — Interne Exception-Details des CSV-Parsers werden nicht mehr im HTTP-Response-Body an den Client durchgereicht.
+
+### Known issues
+- CORS ist als `allow_origins=["*"]` konfiguriert; für den internen Betrieb ausreichend, sollte bei öffentlichem Deployment auf den tatsächlichen Frontend-Origin eingeschränkt werden.
+
 ## 2026-04-16
 
 ### Breaking changes
